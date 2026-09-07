@@ -93,7 +93,7 @@ input::placeholder { color: var(--text-faint); font-style: italic; }
 
   <div class="card">
     <h2>Ton pseudo</h2>
-    <div class="field"><label for="lobby-display-name-global">Comment les autres joueurs te verront</label><input id="lobby-display-name-global" type="text"></div>
+    <div class="field"><label for="lobby-display-name-global">Comment les autres joueurs te verront</label><input id="lobby-display-name-global" type="text"> <span id="pseudo-save-status" class="badge" style="margin-left:4px;"></span></div>
   </div>
 
   <div class="card">
@@ -182,7 +182,8 @@ document.getElementById('auth-submit-btn').addEventListener('click', async funct
 document.getElementById('auth-google-btn').addEventListener('click', async function () {
   setAuthError('');
   try {
-    var res = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+    var cleanUrl = window.location.origin + window.location.pathname;
+    var res = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: cleanUrl } });
     if (res.error) setAuthError(res.error.message);
   } catch (e) { setAuthError('Erreur : ' + e.message); }
 });
@@ -193,11 +194,49 @@ supabase.auth.onAuthStateChange(function (event, session) {
   currentUser = session ? session.user : null;
   if (currentUser) {
     showScreen('lobby');
+    initPseudoField();
     loadMyTables().then(maybeAutoOpenTableFromUrl);
   } else {
     currentTable = null;
     showScreen('auth');
   }
+});
+
+/* ---------- Pseudo : mémorisé sur le compte, modifiable à tout moment ---------- */
+function pseudoDefaultFromGoogle(user) {
+  var meta = user.user_metadata || {};
+  return meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : 'Joueur');
+}
+
+function initPseudoField() {
+  var input = document.getElementById('lobby-display-name-global');
+  var saved = currentUser.user_metadata && currentUser.user_metadata.display_name;
+  input.value = saved || pseudoDefaultFromGoogle(currentUser);
+}
+
+async function savePseudoIfChanged() {
+  var input = document.getElementById('lobby-display-name-global');
+  var statusEl = document.getElementById('pseudo-save-status');
+  var value = input.value.trim();
+  if (!value) return;
+  var already = currentUser.user_metadata && currentUser.user_metadata.display_name;
+  if (value === already) return;
+  statusEl.textContent = 'Enregistrement…';
+  try {
+    var res = await supabase.auth.updateUser({ data: { display_name: value } });
+    if (res.error) { statusEl.textContent = 'Erreur : ' + res.error.message; return; }
+    if (res.data && res.data.user) currentUser = res.data.user;
+    // Remplace aussi le nom déjà enregistré (ex. issu de Google) sur toutes les tables déjà rejointes.
+    await supabase.from('table_members').update({ display_name: value }).eq('user_id', currentUser.id);
+    statusEl.textContent = 'Enregistré ✓';
+    setTimeout(function () { statusEl.textContent = ''; }, 2000);
+    if (currentTable) loadMembers();
+  } catch (e) { statusEl.textContent = 'Erreur : ' + e.message; }
+}
+
+document.getElementById('lobby-display-name-global').addEventListener('blur', savePseudoIfChanged);
+document.getElementById('lobby-display-name-global').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
 });
 
 /* ---------- Retour depuis fiche.html avec ?table=code : réouvre direct cette table ---------- */
