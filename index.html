@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scion — Accueil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #14121a;
+  --panel: #1e1b26;
+  --panel-raised: #262232;
+  --line: #37324a;
+  --line-soft: #2a2636;
+  --parchment: #ece3ce;
+  --text-muted: #a79cc0;
+  --text-faint: #6f6786;
+  --gold: #c6a15b;
+  --gold-bright: #ddc07f;
+  --garnet-bright: #c65f72;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Work Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--parchment); font-family: var(--font-body); min-height: 100vh; }
+h1, h2 { font-family: var(--font-display); margin: 0 0 16px; }
+h1 { font-size: 26px; font-weight: 600; }
+label { display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px; letter-spacing:0.02em; }
+.field { margin-bottom: 14px; }
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%; background: transparent; color: var(--parchment); border: none;
+  border-bottom: 1.5px solid var(--line); border-radius: 0; padding: 7px 4px 9px;
+  outline: none; font-size: 14px; font-family: var(--font-body);
+  transition: border-color .18s ease;
+}
+input:hover, input:focus { border-bottom-color: var(--gold-bright); }
+input::placeholder { color: var(--text-faint); font-style: italic; }
+.card { background: var(--panel); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 18px; }
+.card h2 { display:flex; align-items:center; gap:8px; font-size:15px; font-family: var(--font-mono); text-transform:uppercase; letter-spacing:0.1em; color: var(--gold); margin-bottom:16px; font-weight:500; }
+.btn {
+  display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line);
+  background: var(--panel-raised); color: var(--parchment); padding:8px 14px;
+  border-radius:20px; font-size:13px; letter-spacing:0.02em; cursor:pointer;
+  transition: border-color .15s ease, transform .1s ease; text-decoration:none;
+}
+.btn:hover { border-color: var(--gold); }
+.btn:active { transform: translateY(1px); }
+.btn-gold { border-color: var(--gold); color: var(--gold-bright); }
+.btn-gold:hover { background: rgba(198,161,91,0.12); }
+.btn-ghost { background: transparent; }
+.btn-sm { padding:5px 10px; font-size:11.5px; }
+.btn-block { width:100%; justify-content:center; }
+.error-text { color: var(--garnet-bright); font-size:13px; min-height:18px; }
+.muted { color: var(--text-muted); font-size:14px; }
+.wrap { max-width: 480px; margin: 0 auto; padding: 60px 20px 80px; }
+.wrap-wide { max-width: 640px; }
+.topline { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.char-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line-soft); }
+.char-row:last-child { border-bottom: none; }
+.char-name { flex:1; }
+.badge { font-family: var(--font-mono); font-size:10.5px; color: var(--text-faint); }
+.divider { display:flex; align-items:center; gap:10px; margin:16px 0; color: var(--text-faint); }
+.divider div { flex:1; height:1px; background: var(--line); }
+</style>
+</head>
+<body>
+
+<div id="screen-auth" class="wrap">
+  <div class="card">
+    <h2 id="auth-title">Connexion</h2>
+    <div class="field"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email"></div>
+    <div class="field"><label for="auth-password">Mot de passe</label><input id="auth-password" type="password" autocomplete="current-password"></div>
+    <div id="auth-error" class="error-text"></div>
+    <button type="button" class="btn btn-gold btn-block" id="auth-submit-btn">Se connecter</button>
+    <div style="text-align:center;margin-top:10px;">
+      <button type="button" class="btn btn-sm btn-ghost" id="auth-toggle-mode-btn">Pas encore de compte ? Créer un compte</button>
+    </div>
+    <div class="divider"><div></div><span style="font-size:12px;">ou</span><div></div></div>
+    <button type="button" class="btn btn-sm btn-block" id="auth-google-btn">Se connecter avec Google</button>
+  </div>
+</div>
+
+<div id="screen-lobby" class="wrap wrap-wide" style="display:none;">
+  <div class="topline">
+    <h1>Tes tables</h1>
+    <button type="button" class="btn btn-sm btn-ghost" id="lobby-signout-btn">Se déconnecter</button>
+  </div>
+
+  <div class="card">
+    <h2>Ton pseudo</h2>
+    <div class="field"><label for="lobby-display-name-global">Comment les autres joueurs te verront</label><input id="lobby-display-name-global" type="text"></div>
+  </div>
+
+  <div class="card">
+    <h2>Tes tables rejointes</h2>
+    <div id="lobby-my-tables-list" class="muted"></div>
+  </div>
+
+  <div class="card">
+    <h2>Rejoindre une table</h2>
+    <div class="field"><label for="lobby-join-code">Code de la table</label><input id="lobby-join-code" type="text" placeholder="ex. chroniques-montpellier"></div>
+    <button type="button" class="btn btn-sm btn-block" id="lobby-join-btn">Rejoindre</button>
+  </div>
+
+  <div class="card">
+    <h2>Créer une nouvelle table</h2>
+    <div class="field"><label for="lobby-new-table-name">Nom de la table</label><input id="lobby-new-table-name" type="text" placeholder="ex. Les Chroniques de Montpellier"></div>
+    <div class="field"><label for="lobby-new-table-code">Code d'invitation (à transmettre à tes joueurs)</label><input id="lobby-new-table-code" type="text" placeholder="ex. chroniques-montpellier"></div>
+    <button type="button" class="btn btn-sm btn-gold btn-block" id="lobby-create-table-btn">Créer la table</button>
+  </div>
+
+  <div id="lobby-error" class="error-text"></div>
+
+  <div id="lobby-table-card" class="card" style="display:none;">
+    <h2 id="lobby-table-name">—</h2>
+    <p id="lobby-members-list" class="muted" style="font-size:13px;"></p>
+
+    <h2 style="margin-top:8px;">Personnages</h2>
+    <div id="lobby-characters-list"></div>
+    <div style="display:flex;gap:10px;margin-top:12px;">
+      <input id="lobby-new-char-name" type="text" placeholder="Nom du nouveau personnage" style="flex:1;">
+      <button type="button" class="btn btn-sm btn-gold" id="lobby-new-char-btn">+ Nouveau</button>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:22px;">
+      <a href="codex.html" target="_blank" rel="noopener" class="btn btn-sm" style="flex:1;justify-content:center;">📖 Ouvrir le Codex</a>
+      <button type="button" class="btn btn-sm btn-ghost" id="lobby-leave-table-btn">Changer de table</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://nlskjszxwipbgosxvjkq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sc2tqc3p4d2lwYmdvc3h2amtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE0NjEsImV4cCI6MjEwNDM1NzQ2MX0.VFjq8YaaCpVG8OK4DY9lDJw0JkQtBeOoEZhPeCbpz0c';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+var currentUser = null;
+var currentTable = null;
+var currentCharacters = [];
+
+function showScreen(name) {
+  document.getElementById('screen-auth').style.display = (name === 'auth') ? '' : 'none';
+  document.getElementById('screen-lobby').style.display = (name === 'lobby') ? '' : 'none';
+}
+function setAuthError(msg) { document.getElementById('auth-error').textContent = msg || ''; }
+function setLobbyError(msg) { document.getElementById('lobby-error').textContent = msg || ''; }
+
+/* ---------- Auth ---------- */
+var authMode = 'signin';
+document.getElementById('auth-toggle-mode-btn').addEventListener('click', function () {
+  authMode = (authMode === 'signin') ? 'signup' : 'signin';
+  document.getElementById('auth-title').textContent = (authMode === 'signin') ? 'Connexion' : 'Créer un compte';
+  document.getElementById('auth-submit-btn').textContent = (authMode === 'signin') ? 'Se connecter' : 'Créer le compte';
+  document.getElementById('auth-toggle-mode-btn').textContent = (authMode === 'signin') ? 'Pas encore de compte ? Créer un compte' : 'Déjà un compte ? Se connecter';
+  setAuthError('');
+});
+
+document.getElementById('auth-submit-btn').addEventListener('click', async function () {
+  setAuthError('');
+  var email = document.getElementById('auth-email').value.trim();
+  var password = document.getElementById('auth-password').value;
+  if (!email || !password) { setAuthError('Renseigne un email et un mot de passe.'); return; }
+  try {
+    if (authMode === 'signin') {
+      var res = await supabase.auth.signInWithPassword({ email: email, password: password });
+      if (res.error) { setAuthError(res.error.message); return; }
+    } else {
+      var res2 = await supabase.auth.signUp({ email: email, password: password });
+      if (res2.error) { setAuthError(res2.error.message); return; }
+      if (!res2.data.session) { setAuthError('Compte créé — vérifie ta boîte mail pour confirmer, puis reviens te connecter.'); return; }
+    }
+  } catch (e) { setAuthError('Erreur : ' + e.message); }
+});
+
+document.getElementById('auth-google-btn').addEventListener('click', async function () {
+  setAuthError('');
+  try {
+    var res = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+    if (res.error) setAuthError(res.error.message);
+  } catch (e) { setAuthError('Erreur : ' + e.message); }
+});
+
+document.getElementById('lobby-signout-btn').addEventListener('click', async function () { await supabase.auth.signOut(); });
+
+supabase.auth.onAuthStateChange(function (event, session) {
+  currentUser = session ? session.user : null;
+  if (currentUser) {
+    showScreen('lobby');
+    loadMyTables().then(maybeAutoOpenTableFromUrl);
+  } else {
+    currentTable = null;
+    showScreen('auth');
+  }
+});
+
+/* ---------- Retour depuis fiche.html avec ?table=code : réouvre direct cette table ---------- */
+async function maybeAutoOpenTableFromUrl() {
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('table');
+  if (!code) return;
+  try {
+    var res = await supabase.from('tables').select('*').eq('code', code).maybeSingle();
+    if (res.data) setActiveTable(res.data);
+  } catch (e) {}
+}
+
+/* ---------- Mes tables ---------- */
+async function loadMyTables() {
+  var el = document.getElementById('lobby-my-tables-list');
+  el.textContent = 'Chargement…';
+  try {
+    var res = await supabase.from('table_members').select('table_id, tables(id, code, name)').eq('user_id', currentUser.id);
+    if (res.error) { el.textContent = 'Erreur : ' + res.error.message; return; }
+    var rows = res.data || [];
+    if (!rows.length) { el.textContent = "Tu n'as encore rejoint aucune table."; return; }
+    el.innerHTML = '';
+    rows.forEach(function (r) {
+      if (!r.tables) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm';
+      btn.style.margin = '4px 4px 4px 0';
+      btn.textContent = r.tables.name + ' (' + r.tables.code + ')';
+      btn.addEventListener('click', function () { setActiveTable(r.tables); });
+      el.appendChild(btn);
+    });
+  } catch (e) { el.textContent = 'Erreur : ' + e.message; }
+}
+
+function currentPseudo() {
+  var v = document.getElementById('lobby-display-name-global').value.trim();
+  return v || (currentUser && currentUser.email ? currentUser.email.split('@')[0] : 'Joueur');
+}
+
+document.getElementById('lobby-join-btn').addEventListener('click', async function () {
+  setLobbyError('');
+  var code = document.getElementById('lobby-join-code').value.trim().toLowerCase();
+  if (!code) { setLobbyError('Indique un code de table.'); return; }
+  try {
+    var res = await supabase.from('tables').select('*').eq('code', code).maybeSingle();
+    if (res.error) { setLobbyError(res.error.message); return; }
+    if (!res.data) { setLobbyError("Aucune table avec ce code. Vérifie l'orthographe, ou crée-la plus bas."); return; }
+    await supabase.from('table_members').upsert(
+      { table_id: res.data.id, user_id: currentUser.id, display_name: currentPseudo() },
+      { onConflict: 'table_id,user_id' }
+    );
+    setActiveTable(res.data);
+  } catch (e) { setLobbyError('Erreur : ' + e.message); }
+});
+
+document.getElementById('lobby-create-table-btn').addEventListener('click', async function () {
+  setLobbyError('');
+  var name = document.getElementById('lobby-new-table-name').value.trim();
+  var code = document.getElementById('lobby-new-table-code').value.trim().toLowerCase().replace(/\s+/g, '-');
+  if (!name || !code) { setLobbyError('Indique un nom et un code pour la table.'); return; }
+  try {
+    var res = await supabase.from('tables').insert({ code: code, name: name, created_by: currentUser.id }).select().single();
+    if (res.error) {
+      setLobbyError(res.error.message.indexOf('duplicate') !== -1 ? 'Ce code est déjà pris, choisis-en un autre.' : res.error.message);
+      return;
+    }
+    await supabase.from('table_members').insert({ table_id: res.data.id, user_id: currentUser.id, display_name: currentPseudo() });
+    setActiveTable(res.data);
+  } catch (e) { setLobbyError('Erreur : ' + e.message); }
+});
+
+document.getElementById('lobby-leave-table-btn').addEventListener('click', function () {
+  currentTable = null;
+  document.getElementById('lobby-table-card').style.display = 'none';
+  loadMyTables();
+});
+
+/* ---------- Table active ---------- */
+async function setActiveTable(table) {
+  currentTable = table;
+  document.getElementById('lobby-table-card').style.display = '';
+  document.getElementById('lobby-table-name').textContent = table.name + ' (' + table.code + ')';
+  await loadMembers();
+  await loadCharacters();
+}
+
+async function loadMembers() {
+  var el = document.getElementById('lobby-members-list');
+  try {
+    var res = await supabase.from('table_members').select('display_name').eq('table_id', currentTable.id);
+    if (res.error) { el.textContent = ''; return; }
+    el.textContent = 'Joueurs : ' + (res.data || []).map(function (m) { return m.display_name; }).join(', ');
+  } catch (e) { el.textContent = ''; }
+}
+
+async function loadCharacters() {
+  var el = document.getElementById('lobby-characters-list');
+  el.textContent = 'Chargement…';
+  try {
+    var res = await supabase.from('characters').select('*').eq('table_id', currentTable.id).order('created_at');
+    if (res.error) { el.textContent = 'Erreur : ' + res.error.message; return; }
+    currentCharacters = res.data || [];
+    renderCharactersList();
+  } catch (e) { el.textContent = 'Erreur : ' + e.message; }
+}
+
+function renderCharactersList() {
+  var el = document.getElementById('lobby-characters-list');
+  if (!currentCharacters.length) { el.innerHTML = '<p class="muted">Aucun personnage pour le moment.</p>'; return; }
+  el.innerHTML = '';
+  currentCharacters.forEach(function (row) {
+    var mine = row.owner_id === currentUser.id;
+    var line = document.createElement('div');
+    line.className = 'char-row';
+
+    var label = document.createElement('span');
+    label.className = 'char-name';
+    label.textContent = row.name || '(Sans nom)';
+    line.appendChild(label);
+
+    if (mine && row.visible) {
+      var badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = 'VISIBLE';
+      line.appendChild(badge);
+    }
+
+    var openLink = document.createElement('a');
+    openLink.className = 'btn btn-sm';
+    openLink.textContent = mine ? 'Ouvrir' : 'Consulter';
+    openLink.href = 'fiche.html?table=' + encodeURIComponent(currentTable.code) + '&char=' + encodeURIComponent(row.id);
+    line.appendChild(openLink);
+
+    if (mine) {
+      var delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn btn-sm btn-ghost';
+      delBtn.textContent = '🗑';
+      delBtn.title = 'Supprimer';
+      delBtn.addEventListener('click', async function () {
+        if (!confirm('Supprimer définitivement "' + (row.name || 'ce personnage') + '" ?')) return;
+        await supabase.from('characters').delete().eq('id', row.id);
+        loadCharacters();
+      });
+      line.appendChild(delBtn);
+    }
+
+    el.appendChild(line);
+  });
+}
+
+document.getElementById('lobby-new-char-btn').addEventListener('click', async function () {
+  setLobbyError('');
+  var name = document.getElementById('lobby-new-char-name').value.trim() || 'Nouveau Scion';
+  try {
+    var res = await supabase.from('characters').insert({
+      table_id: currentTable.id, owner_id: currentUser.id, name: name, visible: false, data: {}
+    }).select().single();
+    if (res.error) { setLobbyError(res.error.message); return; }
+    window.location.href = 'fiche.html?table=' + encodeURIComponent(currentTable.code) + '&char=' + encodeURIComponent(res.data.id);
+  } catch (e) { setLobbyError('Erreur : ' + e.message); }
+});
+</script>
+</body>
+</html>
