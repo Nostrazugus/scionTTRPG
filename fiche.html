@@ -1665,14 +1665,7 @@ label {
 </head>
 <body>
 
-<div id="screen-gate" style="max-width:460px;margin:100px auto;padding:0 20px;text-align:center;">
-  <div class="card">
-    <p id="gate-message" style="color:var(--text-muted);">Chargement…</p>
-    <a href="index.html" class="btn btn-sm" style="margin-top:10px;display:inline-flex;">← Retour à l'accueil</a>
-  </div>
-</div>
-
-<div id="app" style="display:none">
+<div id="app">
   <header id="topbar">
     <div style="display:flex;align-items:center;gap:14px;min-width:0;">
       <button id="nav-toggle" class="btn btn-ghost btn-sm" aria-label="Ouvrir le menu">☰</button>
@@ -3219,17 +3212,7 @@ label {
   function saveState() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
-      var __json = JSON.stringify(state);
-      try { localStorage.setItem(STORAGE_KEY, __json); } catch (e) {}
-      try {
-        if (window.__scionSupabase && window.__scionCurrentCharId) {
-          window.__scionSupabase.from('characters').update({
-            data: JSON.parse(__json),
-            name: state.personnage || '(Sans nom)',
-            updated_at: new Date().toISOString()
-          }).eq('id', window.__scionCurrentCharId).then(function () {}, function () {});
-        }
-      } catch (e) {}
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
     }, 250);
   }
 
@@ -4516,7 +4499,11 @@ label {
       o.value = name; o.textContent = name;
       slot.select.appendChild(o);
     });
-    if (vocOptions.indexOf(st.name) === -1) st.name = "";
+    // Ne jamais effacer le nom sauvegardé juste parce qu'il n'apparaît pas (encore) dans la liste
+    // dérivée des Talents actuellement chargés — une Vocation récemment ajoutée à Data Scion peut
+    // manquer momentanément dans les données de secours embarquées, avant que la synchronisation
+    // en direct ne les mette à jour. Le menu affichera « — Choisir — » jusque-là, sans perdre la
+    // valeur réelle, qui réapparaîtra dès que la Vocation sera synchronisée.
     slot.select.value = st.name || "";
 
     slot.track.querySelectorAll(".legend-mark").forEach(function (btn) {
@@ -9916,8 +9903,12 @@ label {
         return wrap;
       }
 
-      // Niveau — en premier
-      block.appendChild(makeDotTrackField("Niveau", "niveau"));
+      // Niveau et Lien du Destin — sur la même ligne
+      var niveauRow = document.createElement("div");
+      niveauRow.className = "disciple-fields-row";
+      niveauRow.appendChild(makeDotTrackField("Niveau", "niveau"));
+      niveauRow.appendChild(makeDotTrackField("Lien du Destin", "lienDestinNiveau"));
+      block.appendChild(niveauRow);
 
       // Nom — séparé par la fine ligne
       var nomField = makeField("Nom", "nom", "Nom de la Relique...", "disciple-divider");
@@ -13337,124 +13328,17 @@ label {
     if (typeof applyAimantNaturelCollapse === "function") applyAimantNaturelCollapse();
   }
 
-  // L'auto-chargement au démarrage est désormais géré par fiche.html
-  // (paramètres d'URL ?table=...&char=...) : loadState(), renderAll() et
-  // performSync() sont appelés explicitement une fois le personnage ciblé
-  // récupéré depuis Supabase, plutôt qu'automatiquement ici.
-  window.__ficheApp = {
-    loadState: loadState,
-    renderAll: renderAll,
-    performSync: performSync,
-    saveState: saveState
-  };
+  loadState();
+  renderAll();
+  // Synchronise automatiquement au chargement pour éviter d'avoir à cliquer
+  // sur Rafraîchir à chaque ouverture — la copie intégrée reste le repli
+  // silencieux si la requête échoue (hors-ligne, etc.). En cas d'erreur malgré
+  // la nouvelle tentative automatique, le bouton Source se colore en rouge
+  // (voir performSync) plutôt que d'ouvrir le panneau tout seul au chargement.
+  performSync();
 })();
 
 
 </script>
-<script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const SUPABASE_URL = 'https://nlskjszxwipbgosxvjkq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sc2tqc3p4d2lwYmdvc3h2amtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE0NjEsImV4cCI6MjEwNDM1NzQ2MX0.VFjq8YaaCpVG8OK4DY9lDJw0JkQtBeOoEZhPeCbpz0c';
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-window.__scionSupabase = supabase;
-
-const FICHE_STORAGE_KEY = 'scionFiche:v1';
-
-function setGate(msg) {
-  document.getElementById('gate-message').textContent = msg;
-}
-function showGate(msg) {
-  setGate(msg);
-  document.getElementById('screen-gate').style.display = '';
-  document.getElementById('app').style.display = 'none';
-}
-
-async function init() {
-  var params = new URLSearchParams(window.location.search);
-  var tableCode = params.get('table') || '';
-  var charId = params.get('char') || '';
-
-  if (!charId) { showGate('Aucun personnage indiqué. Reviens à l\'accueil pour en choisir un.'); return; }
-
-  var sessionRes = await supabase.auth.getSession();
-  var session = sessionRes.data && sessionRes.data.session;
-  if (!session) {
-    showGate('Tu dois être connecté pour accéder à cette fiche.');
-    return;
-  }
-
-  var res = await supabase.from('characters').select('*').eq('id', charId).maybeSingle();
-  if (res.error || !res.data) {
-    showGate("Ce personnage est introuvable, ou tu n'y as pas accès.");
-    return;
-  }
-
-  var row = res.data;
-  var mine = row.owner_id === session.user.id;
-  openCharacterRow(row, !mine, tableCode);
-}
-
-function openCharacterRow(row, readOnly, tableCode) {
-  try { localStorage.setItem(FICHE_STORAGE_KEY, JSON.stringify(row.data || {})); } catch (e) {}
-  window.__scionCurrentCharId = readOnly ? null : row.id;
-
-  document.getElementById('screen-gate').style.display = 'none';
-  document.getElementById('app').style.display = '';
-
-  if (window.__ficheApp) {
-    window.__ficheApp.loadState();
-    window.__ficheApp.renderAll();
-    window.__ficheApp.performSync();
-  }
-
-  setTimeout(function () {
-    var appEl = document.getElementById('app');
-    appEl.querySelectorAll('input, select, textarea, button').forEach(function (elm) {
-      if (elm.closest('#topbar')) return;
-      if (readOnly) elm.setAttribute('disabled', 'disabled');
-      else elm.removeAttribute('disabled');
-    });
-    injectTopbarControls(row, readOnly, tableCode);
-  }, 30);
-}
-
-function injectTopbarControls(row, readOnly, tableCode) {
-  var actions = document.querySelector('#topbar .topbar-actions');
-  if (!actions || document.getElementById('scion-back-btn')) return; // n'injecte qu'une fois
-
-  var backBtn = document.createElement('a');
-  backBtn.id = 'scion-back-btn';
-  backBtn.className = 'btn btn-sm';
-  backBtn.textContent = '🗂 Table';
-  backBtn.href = tableCode ? ('index.html?table=' + encodeURIComponent(tableCode)) : 'index.html';
-
-  var codexBtn = document.createElement('a');
-  codexBtn.className = 'btn btn-sm';
-  codexBtn.textContent = '📖 Codex';
-  codexBtn.href = 'codex.html';
-  codexBtn.target = '_blank';
-  codexBtn.rel = 'noopener';
-
-  actions.insertBefore(codexBtn, actions.firstChild);
-  actions.insertBefore(backBtn, actions.firstChild);
-
-  if (!readOnly) {
-    var toggleWrap = document.createElement('label');
-    toggleWrap.style.cssText = 'display:inline-flex;align-items:center;gap:6px;font-size:13px;';
-    toggleWrap.innerHTML = '<input type="checkbox" id="scion-visibility-toggle"> Visible pour la table';
-    actions.insertBefore(toggleWrap, actions.firstChild);
-    var toggle = toggleWrap.querySelector('#scion-visibility-toggle');
-    toggle.checked = !!row.visible;
-    toggle.addEventListener('change', async function () {
-      await supabase.from('characters').update({ visible: toggle.checked }).eq('id', row.id);
-      row.visible = toggle.checked;
-    });
-  }
-}
-
-init();
-</script>
-
 </body>
 </html>
