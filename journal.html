@@ -33,12 +33,15 @@ h2 { font-size: 15px; font-family: var(--font-mono); text-transform:uppercase; l
 h3 { font-size: 19px; font-weight: 600; margin-bottom:4px; }
 label { display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px; letter-spacing:0.02em; }
 .field { margin-bottom: 14px; }
-input[type="text"], input[type="file"], textarea {
+input[type="text"], input[type="number"], input[type="file"], textarea, select {
   width: 100%; background: var(--bg); color: var(--parchment); border: 1px solid var(--line);
   border-radius: 6px; padding: 8px 10px; outline: none; font-size: 14px; font-family: var(--font-body);
 }
 textarea { min-height: 90px; resize: vertical; }
-input[type="text"]:focus, textarea:focus { border-color: var(--gold-bright); }
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus { border-color: var(--gold-bright); }
+.md-hint { font-size:11.5px; color: var(--text-faint); margin-top:-8px; margin-bottom:14px; }
+.session-row { display:flex; gap:12px; }
+.session-row .field { flex:1; margin-bottom:14px; }
 .card { background: var(--panel); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 18px; }
 .btn {
   display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line);
@@ -54,16 +57,39 @@ input[type="text"]:focus, textarea:focus { border-color: var(--gold-bright); }
 .muted { color: var(--text-muted); font-size:14px; }
 .wrap { max-width: 640px; margin: 0 auto; padding: 50px 20px 80px; }
 .topline { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+.toolbar { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+.toolbar input[type="text"] { flex:1; min-width:160px; }
+.toolbar select { width:auto; min-width:150px; }
+.badge { display:inline-block; font-family: var(--font-mono); font-size:10.5px; letter-spacing:0.03em; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+.badge-new { background: rgba(198,161,91,0.18); color: var(--gold-bright); }
+.badge-gm { background: rgba(198,101,114,0.18); color: var(--garnet-bright); }
+.badge-session { background: var(--panel-raised); color: var(--text-muted); border:1px solid var(--line); }
+.entry-header-badges { display:flex; gap:6px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
 .entry-meta { font-family: var(--font-mono); font-size:11.5px; color: var(--text-faint); margin-bottom:10px; }
 .entry-body { white-space: pre-wrap; line-height:1.6; font-size:14.5px; }
-.entry-image { max-width:100%; border-radius:8px; margin-top:12px; display:block; }
+.entry-images { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-top:12px; }
+.entry-images img { width:100%; height:auto; max-height:220px; object-fit:cover; border-radius:8px; display:block; cursor:zoom-in; }
 .entry-actions { margin-top:12px; display:flex; gap:8px; }
 .comments { margin-top:16px; padding-top:14px; border-top:1px solid var(--line-soft); }
 .comment { padding:8px 0; border-bottom:1px solid var(--line-soft); font-size:13.5px; }
 .comment:last-child { border-bottom:none; }
+.comment-new { box-shadow: inset 3px 0 0 var(--gold); padding-left:8px; }
 .comment-meta { font-family: var(--font-mono); font-size:10.5px; color: var(--text-faint); margin-bottom:2px; }
 .comment-form { display:flex; gap:8px; margin-top:10px; }
 .comment-form textarea { min-height:38px; flex:1; }
+.lightbox { position:fixed; inset:0; background:rgba(10,9,14,0.92); display:flex; align-items:center; justify-content:center; z-index:999; cursor: zoom-out; padding:24px; }
+.lightbox img { max-width:100%; max-height:100%; border-radius:6px; }
+.image-manager-grid { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.image-chip { position:relative; width:84px; height:84px; border-radius:8px; overflow:hidden; border:1px solid var(--line); flex-shrink:0; }
+.image-chip img { width:100%; height:100%; object-fit:cover; display:block; }
+.image-chip-remove {
+  position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%;
+  background:rgba(10,9,14,0.75); color:var(--parchment); border:none; font-size:11px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; padding:0; line-height:1;
+}
+.image-manager-add input[type="file"] { padding:6px 8px; font-size:12.5px; }
+.image-manager-url-row { display:flex; gap:6px; margin-top:8px; }
+.image-manager-full { font-size:12px; color: var(--text-faint); margin:0; }
 </style>
 </head>
 <body>
@@ -85,11 +111,24 @@ input[type="text"]:focus, textarea:focus { border-color: var(--gold-bright); }
     <h2>Nouvel article</h2>
     <div class="field"><label for="new-title">Titre</label><input id="new-title" type="text" placeholder="Titre de l'article (optionnel)"></div>
     <div class="field"><label for="new-body">Texte</label><textarea id="new-body" placeholder="Raconte…"></textarea></div>
-    <div class="field"><label for="new-image">Image (optionnelle)</label><input id="new-image" type="file" accept="image/*"></div>
+    <div class="md-hint">Tu peux utiliser **gras** et *italique*.</div>
+    <div class="session-row">
+      <div class="field"><label for="new-session">Numéro de séance (optionnel)</label><input id="new-session" type="number" min="1" step="1" placeholder="ex. 12"></div>
+      <div class="field"><label for="new-signed-as">Signer en tant que</label><select id="new-signed-as"></select></div>
+    </div>
+    <div class="field">
+      <label>Images (jusqu'à 4 — fichier ou lien)</label>
+      <div id="new-images-slot"></div>
+    </div>
     <div id="new-entry-error" class="error-text"></div>
     <button type="button" class="btn btn-gold" id="new-entry-btn">Publier</button>
   </div>
 
+  <h2>Articles</h2>
+  <div class="toolbar">
+    <input id="search-input" type="text" placeholder="Rechercher dans les articles…">
+    <select id="session-filter"><option value="">Toutes les séances</option></select>
+  </div>
   <div id="entries-list"></div>
 </div>
 
@@ -100,20 +139,182 @@ const SUPABASE_URL = 'https://nlskjszxwipbgosxvjkq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sc2tqc3p4d2lwYmdvc3h2amtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE0NjEsImV4cCI6MjEwNDM1NzQ2MX0.VFjq8YaaCpVG8OK4DY9lDJw0JkQtBeOoEZhPeCbpz0c';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const MAX_IMAGES = 4;
+
 var currentUser = null;
 var currentTable = null;
-var memberNames = {}; // user_id -> pseudo, pour cette table
+var memberNames = {};   // user_id -> pseudo, pour cette table
+var myCharacters = [];  // [{id, name}] — mes personnages sur cette table
+var allEntries = [];    // dernier chargement complet, avant filtrage
+var previousVisitISO = null; // horodatage de la visite précédente, pour les badges "Nouveau"
 
 var dateFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 function fmtDate(iso) { try { return dateFmt.format(new Date(iso)); } catch (e) { return iso; } }
 function nameOf(userId) { return memberNames[userId] || 'Joueur inconnu'; }
 function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
 
+// Mise en forme minimale et sûre : échappe d'abord tout le HTML, puis n'autorise
+// que **gras** et *italique*. Les retours à la ligne sont gérés par white-space:pre-wrap.
+function renderRichText(raw) {
+  var escaped = escapeHtml(raw);
+  escaped = escaped.replace(/\*\*([^\*]+?)\*\*/g, '<strong>$1</strong>');
+  escaped = escaped.replace(/\*([^\*]+?)\*/g, '<em>$1</em>');
+  return escaped;
+}
+
+function makeBadge(text, cls) {
+  var b = document.createElement('span');
+  b.className = 'badge ' + cls;
+  b.textContent = text;
+  return b;
+}
+
+function currentPseudoDisplay() { return memberNames[currentUser.id] || 'Joueur'; }
+
+function signatureOptionsHtml(selected) {
+  var html = '<option value=""' + (selected ? '' : ' selected') + '>' + escapeHtml(currentPseudoDisplay()) + ' (pseudo)</option>';
+  myCharacters.forEach(function (c) {
+    html += '<option value="' + escapeHtml(c.name) + '"' + (selected === c.name ? ' selected' : '') + '>' + escapeHtml(c.name) + '</option>';
+  });
+  return html;
+}
+
 function showGate(msg) {
   document.getElementById('gate-message').textContent = msg;
   document.getElementById('screen-gate').style.display = '';
   document.getElementById('journal-app').style.display = 'none';
 }
+
+function openLightbox(src) {
+  var overlay = document.createElement('div');
+  overlay.className = 'lightbox';
+  var img = document.createElement('img');
+  img.src = src;
+  overlay.appendChild(img);
+  function close() { overlay.remove(); document.removeEventListener('keydown', onKey); }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  overlay.addEventListener('click', close);
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(overlay);
+}
+
+/* ============ Gestionnaire d'images (jusqu'à 4, fichier ou lien URL) ============
+   Un même petit composant sert au formulaire "Nouvel article" et à chaque formulaire
+   d'édition. initialImages est la liste déjà enregistrée (vide pour un nouvel article),
+   sous la forme [{url, source: 'upload'|'link'}, ...]. */
+function createImageManager(initialImages) {
+  var items = (initialImages || []).map(function (im) {
+    return { kind: 'existing', url: im.url, source: im.source };
+  });
+
+  var container = document.createElement('div');
+  var grid = document.createElement('div');
+  grid.className = 'image-manager-grid';
+  var addRow = document.createElement('div');
+  addRow.className = 'image-manager-add';
+  container.appendChild(grid);
+  container.appendChild(addRow);
+
+  function render() {
+    grid.innerHTML = '';
+    items.forEach(function (item, idx) {
+      var chip = document.createElement('div');
+      chip.className = 'image-chip';
+      var img = document.createElement('img');
+      img.src = item.kind === 'file' ? item.previewUrl : item.url;
+      img.alt = '';
+      chip.appendChild(img);
+      var rm = document.createElement('button');
+      rm.type = 'button'; rm.className = 'image-chip-remove'; rm.textContent = '✕';
+      rm.title = 'Retirer cette image';
+      rm.addEventListener('click', function () {
+        if (item.kind === 'file' && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        items.splice(idx, 1);
+        render();
+      });
+      chip.appendChild(rm);
+      grid.appendChild(chip);
+    });
+    renderAddRow();
+  }
+
+  function renderAddRow() {
+    addRow.innerHTML = '';
+    if (items.length >= MAX_IMAGES) {
+      var full = document.createElement('p');
+      full.className = 'image-manager-full';
+      full.textContent = 'Maximum de ' + MAX_IMAGES + ' images atteint.';
+      addRow.appendChild(full);
+      return;
+    }
+    var fileInput = document.createElement('input');
+    fileInput.type = 'file'; fileInput.accept = 'image/*';
+    fileInput.addEventListener('change', function () {
+      var f = fileInput.files[0];
+      if (!f) return;
+      items.push({ kind: 'file', file: f, previewUrl: URL.createObjectURL(f) });
+      fileInput.value = '';
+      render();
+    });
+    addRow.appendChild(fileInput);
+
+    var urlRow = document.createElement('div');
+    urlRow.className = 'image-manager-url-row';
+    var urlInput = document.createElement('input');
+    urlInput.type = 'text'; urlInput.placeholder = 'ou colle un lien URL vers une image…';
+    var urlBtn = document.createElement('button');
+    urlBtn.type = 'button'; urlBtn.className = 'btn btn-sm'; urlBtn.textContent = 'Ajouter';
+    function addLink() {
+      var v = urlInput.value.trim();
+      if (!v) return;
+      if (!/^https?:\/\//i.test(v)) { alert('Le lien doit commencer par http:// ou https://'); return; }
+      items.push({ kind: 'link', url: v });
+      urlInput.value = '';
+      render();
+    }
+    urlBtn.addEventListener('click', addLink);
+    urlInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addLink(); } });
+    urlRow.appendChild(urlInput);
+    urlRow.appendChild(urlBtn);
+    addRow.appendChild(urlRow);
+  }
+
+  render();
+
+  return { el: container, getItems: function () { return items; } };
+}
+
+// Transforme les items d'un gestionnaire d'images en tableau final prêt pour la colonne
+// "images" (upload effectif des fichiers en attente ; les liens et images déjà
+// enregistrées passent tels quels).
+async function resolveImageManager(manager, entryId) {
+  var items = manager.getItems();
+  var finalImages = [];
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (it.kind === 'existing') {
+      finalImages.push({ url: it.url, source: it.source });
+    } else if (it.kind === 'link') {
+      finalImages.push({ url: it.url, source: 'link' });
+    } else if (it.kind === 'file') {
+      var uploadedUrl = await uploadEntryImage(entryId, it.file);
+      if (uploadedUrl) finalImages.push({ url: uploadedUrl, source: 'upload' });
+    }
+  }
+  return finalImages;
+}
+
+// Les images "upload" présentes avant modification mais absentes du résultat final
+// doivent être effacées du stockage (best-effort, ne bloque jamais la sauvegarde).
+function removedUploadedImages(initialImages, finalImages) {
+  var keptUrls = finalImages.map(function (im) { return im.url; });
+  return (initialImages || []).filter(function (im) {
+    return im.source === 'upload' && keptUrls.indexOf(im.url) === -1;
+  });
+}
+
+var newImageManager = createImageManager([]);
+document.getElementById('new-images-slot').appendChild(newImageManager.el);
 
 async function init() {
   var params = new URLSearchParams(window.location.search);
@@ -138,12 +339,20 @@ async function init() {
   });
   if (!mine) { showGate("Tu n'es pas membre de cette table."); return; }
 
+  var charRes = await supabase.from('characters').select('id, name').eq('table_id', currentTable.id).eq('owner_id', currentUser.id).order('created_at');
+  myCharacters = charRes.data || [];
+  document.getElementById('new-signed-as').innerHTML = signatureOptionsHtml(null);
+
+  var visitKey = 'scionJournal:lastVisit:' + currentTable.id;
+  try { previousVisitISO = localStorage.getItem(visitKey); } catch (e) { previousVisitISO = null; }
+
   document.getElementById('journal-title').textContent = 'Journal de bord — ' + currentTable.name;
   document.getElementById('back-link').href = 'index.html?table=' + encodeURIComponent(currentTable.code);
   document.getElementById('screen-gate').style.display = 'none';
   document.getElementById('journal-app').style.display = '';
 
-  loadEntries();
+  await loadEntries();
+  try { localStorage.setItem(visitKey, new Date().toISOString()); } catch (e) {}
 }
 
 async function loadEntries() {
@@ -156,24 +365,71 @@ async function loadEntries() {
     .order('created_at', { ascending: false })
     .order('created_at', { foreignTable: 'journal_comments', ascending: true });
   if (res.error) { el.innerHTML = '<p class="error-text">Erreur : ' + escapeHtml(res.error.message) + '</p>'; return; }
-  renderEntries(res.data || []);
+  allEntries = res.data || [];
+  populateSessionFilter();
+  applyFilters();
 }
+
+function populateSessionFilter() {
+  var sel = document.getElementById('session-filter');
+  var current = sel.value;
+  var sessions = Array.from(new Set(
+    allEntries.map(function (e) { return e.session_number; }).filter(function (v) { return v !== null && v !== undefined; })
+  ));
+  sessions.sort(function (a, b) { return b - a; });
+  sel.innerHTML = '<option value="">Toutes les séances</option>' +
+    sessions.map(function (s) { return '<option value="' + s + '">Séance ' + s + '</option>'; }).join('');
+  if (sessions.indexOf(Number(current)) !== -1) sel.value = current;
+}
+
+function getFilteredEntries() {
+  var q = document.getElementById('search-input').value.trim().toLowerCase();
+  var sessionFilter = document.getElementById('session-filter').value;
+  return allEntries.filter(function (e) {
+    if (sessionFilter !== '' && String(e.session_number || '') !== sessionFilter) return false;
+    if (!q) return true;
+    var hay = ((e.title || '') + ' ' + e.body + ' ' + (e.signed_as || '')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+}
+
+function applyFilters() { renderEntries(getFilteredEntries()); }
+document.getElementById('search-input').addEventListener('input', applyFilters);
+document.getElementById('session-filter').addEventListener('change', applyFilters);
 
 function renderEntries(entries) {
   var el = document.getElementById('entries-list');
-  if (!entries.length) { el.innerHTML = '<p class="muted">Aucun article pour le moment — sois le premier à écrire quelque chose.</p>'; return; }
+  if (!entries.length) {
+    el.innerHTML = '<p class="muted">' + (allEntries.length ? 'Aucun article ne correspond à ce filtre.' : "Aucun article pour le moment — sois le premier à écrire quelque chose.") + '</p>';
+    return;
+  }
   el.innerHTML = '';
   entries.forEach(function (entry) { el.appendChild(renderEntryCard(entry)); });
 }
 
 function renderEntryCard(entry) {
   var mine = entry.author_id === currentUser.id;
+  var isGm = currentTable.created_by === entry.author_id;
+  var isNewEntry = !mine && previousVisitISO && entry.created_at > previousVisitISO;
+  var newCommentsCount = (entry.journal_comments || []).filter(function (c) {
+    return c.author_id !== currentUser.id && previousVisitISO && c.created_at > previousVisitISO;
+  }).length;
+
   var card = document.createElement('div');
   card.className = 'card';
 
+  var badges = document.createElement('div');
+  badges.className = 'entry-header-badges';
+  if (isNewEntry) badges.appendChild(makeBadge('Nouveau', 'badge-new'));
+  if (isGm) badges.appendChild(makeBadge('MJ', 'badge-gm'));
+  if (entry.session_number != null) badges.appendChild(makeBadge('Séance ' + entry.session_number, 'badge-session'));
+  if (newCommentsCount > 0) badges.appendChild(makeBadge(newCommentsCount + (newCommentsCount > 1 ? ' nouveaux commentaires' : ' nouveau commentaire'), 'badge-new'));
+  if (badges.childNodes.length) card.appendChild(badges);
+
   var meta = document.createElement('div');
   meta.className = 'entry-meta';
-  meta.textContent = nameOf(entry.author_id) + ' · ' + fmtDate(entry.created_at) + (entry.updated_at && entry.updated_at !== entry.created_at ? ' (modifié)' : '');
+  var signature = entry.signed_as ? entry.signed_as + ' (' + nameOf(entry.author_id) + ')' : nameOf(entry.author_id);
+  meta.textContent = signature + ' · ' + fmtDate(entry.created_at) + (entry.updated_at && entry.updated_at !== entry.created_at ? ' (modifié)' : '');
   card.appendChild(meta);
 
   var titleEl = document.createElement('h3');
@@ -182,24 +438,43 @@ function renderEntryCard(entry) {
 
   var bodyEl = document.createElement('div');
   bodyEl.className = 'entry-body';
-  bodyEl.textContent = entry.body;
+  bodyEl.innerHTML = renderRichText(entry.body);
   card.appendChild(bodyEl);
 
-  if (entry.image_url) {
-    var img = document.createElement('img');
-    img.className = 'entry-image';
-    img.src = entry.image_url;
-    img.alt = '';
-    card.appendChild(img);
+  var images = entry.images || [];
+  if (images.length) {
+    var imagesWrap = document.createElement('div');
+    imagesWrap.className = 'entry-images';
+    images.forEach(function (im) {
+      var img = document.createElement('img');
+      img.src = im.url;
+      img.alt = '';
+      img.addEventListener('click', function () { openLightbox(im.url); });
+      imagesWrap.appendChild(img);
+    });
+    card.appendChild(imagesWrap);
   }
 
   if (mine) {
     var actions = document.createElement('div');
     actions.className = 'entry-actions';
+
     var editBtn = document.createElement('button');
     editBtn.type = 'button'; editBtn.className = 'btn btn-sm'; editBtn.textContent = 'Modifier';
     editBtn.addEventListener('click', function () { openEditForm(card, entry); });
     actions.appendChild(editBtn);
+
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button'; delBtn.className = 'btn btn-sm btn-ghost'; delBtn.textContent = '🗑 Supprimer';
+    delBtn.addEventListener('click', async function () {
+      if (!confirm('Supprimer définitivement cet article et ses commentaires ?')) return;
+      var delRes = await supabase.from('journal_entries').delete().eq('id', entry.id);
+      if (delRes.error) { alert('Erreur : ' + delRes.error.message); return; }
+      images.filter(function (im) { return im.source === 'upload'; }).forEach(function (im) { removeStoredImage(im.url); });
+      loadEntries();
+    });
+    actions.appendChild(delBtn);
+
     card.appendChild(actions);
   }
 
@@ -213,11 +488,20 @@ function openEditForm(card, entry) {
   wrap.innerHTML =
     '<div class="field"><label>Titre</label><input type="text" class="edit-title" value="' + escapeHtml(entry.title || '') + '"></div>' +
     '<div class="field"><label>Texte</label><textarea class="edit-body">' + escapeHtml(entry.body) + '</textarea></div>' +
-    '<div class="field"><label>Remplacer l\'image (optionnel)</label><input type="file" class="edit-image" accept="image/*"></div>' +
+    '<div class="md-hint">Tu peux utiliser **gras** et *italique*.</div>' +
+    '<div class="session-row">' +
+      '<div class="field"><label>Numéro de séance (optionnel)</label><input type="number" min="1" step="1" class="edit-session" value="' + (entry.session_number != null ? entry.session_number : '') + '"></div>' +
+      '<div class="field"><label>Signer en tant que</label><select class="edit-signed-as">' + signatureOptionsHtml(entry.signed_as || null) + '</select></div>' +
+    '</div>' +
+    '<div class="field"><label>Images (jusqu\'à ' + MAX_IMAGES + ' — fichier ou lien)</label><div class="edit-images-slot"></div></div>' +
     '<div class="error-text edit-error"></div>' +
     '<button type="button" class="btn btn-gold btn-sm edit-save">Enregistrer</button> ' +
     '<button type="button" class="btn btn-sm btn-ghost edit-cancel">Annuler</button>';
   card.appendChild(wrap);
+
+  var initialImages = entry.images || [];
+  var editImageManager = createImageManager(initialImages);
+  wrap.querySelector('.edit-images-slot').appendChild(editImageManager.el);
 
   wrap.querySelector('.edit-cancel').addEventListener('click', function () { loadEntries(); });
   wrap.querySelector('.edit-save').addEventListener('click', async function () {
@@ -226,16 +510,21 @@ function openEditForm(card, entry) {
     var title = wrap.querySelector('.edit-title').value.trim();
     var body = wrap.querySelector('.edit-body').value.trim();
     if (!body) { errEl.textContent = 'Le texte ne peut pas être vide.'; return; }
-    var file = wrap.querySelector('.edit-image').files[0];
+    var sessionRaw = wrap.querySelector('.edit-session').value.trim();
+    var sessionNumber = sessionRaw === '' ? null : parseInt(sessionRaw, 10);
+    var signedAs = wrap.querySelector('.edit-signed-as').value || null;
+    var saveBtn = wrap.querySelector('.edit-save');
+    saveBtn.disabled = true;
     try {
-      var upd = await supabase.from('journal_entries').update({ title: title, body: body, updated_at: new Date().toISOString() }).eq('id', entry.id);
-      if (upd.error) { errEl.textContent = upd.error.message; return; }
-      if (file) {
-        var url = await uploadEntryImage(entry.id, file);
-        if (url) await supabase.from('journal_entries').update({ image_url: url }).eq('id', entry.id);
-      }
+      var finalImages = await resolveImageManager(editImageManager, entry.id);
+      var upd = await supabase.from('journal_entries').update({
+        title: title, body: body, session_number: sessionNumber, signed_as: signedAs,
+        images: finalImages, updated_at: new Date().toISOString()
+      }).eq('id', entry.id);
+      if (upd.error) { errEl.textContent = upd.error.message; saveBtn.disabled = false; return; }
+      removedUploadedImages(initialImages, finalImages).forEach(function (im) { removeStoredImage(im.url); });
       loadEntries();
-    } catch (e) { errEl.textContent = 'Erreur : ' + e.message; }
+    } catch (e) { errEl.textContent = 'Erreur : ' + e.message; saveBtn.disabled = false; }
   });
 }
 
@@ -244,15 +533,33 @@ function renderComments(entry) {
   wrap.className = 'comments';
 
   (entry.journal_comments || []).forEach(function (c) {
+    var isNew = c.author_id !== currentUser.id && previousVisitISO && c.created_at > previousVisitISO;
     var cEl = document.createElement('div');
-    cEl.className = 'comment';
+    cEl.className = 'comment' + (isNew ? ' comment-new' : '');
+
     var cMeta = document.createElement('div');
     cMeta.className = 'comment-meta';
     cMeta.textContent = nameOf(c.author_id) + ' · ' + fmtDate(c.created_at);
     cEl.appendChild(cMeta);
+
     var cBody = document.createElement('div');
-    cBody.textContent = c.body;
+    cBody.innerHTML = renderRichText(c.body);
     cEl.appendChild(cBody);
+
+    if (c.author_id === currentUser.id) {
+      var delBtn = document.createElement('button');
+      delBtn.type = 'button'; delBtn.className = 'btn btn-sm btn-ghost'; delBtn.style.marginTop = '4px';
+      delBtn.textContent = '🗑';
+      delBtn.title = 'Supprimer ce commentaire';
+      delBtn.addEventListener('click', async function () {
+        if (!confirm('Supprimer ce commentaire ?')) return;
+        var res = await supabase.from('journal_comments').delete().eq('id', c.id);
+        if (res.error) { alert('Erreur : ' + res.error.message); return; }
+        loadEntries();
+      });
+      cEl.appendChild(delBtn);
+    }
+
     wrap.appendChild(cEl);
   });
 
@@ -275,12 +582,52 @@ function renderComments(entry) {
   return wrap;
 }
 
+// Redimensionne côté navigateur (bord le plus long à 1600px, ré-encodée en JPEG qualité 0.82)
+// avant l'envoi, pour que les photos prises au téléphone ne saturent pas le stockage gratuit.
+function compressImage(file, maxDim, quality) {
+  maxDim = maxDim || 1600;
+  quality = quality || 0.82;
+  return new Promise(function (resolve) {
+    var objectUrl = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var w = img.width, h = img.height;
+      var scale = Math.min(1, maxDim / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale));
+      var ch = Math.max(1, Math.round(h * scale));
+      var canvas = document.createElement('canvas');
+      canvas.width = cw; canvas.height = ch;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(img, 0, 0, cw, ch);
+      URL.revokeObjectURL(objectUrl);
+      canvas.toBlob(function (blob) { resolve(blob || file); }, 'image/jpeg', quality);
+    };
+    img.onerror = function () { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.src = objectUrl;
+  });
+}
+
 async function uploadEntryImage(entryId, file) {
-  var path = currentTable.id + '/' + entryId + '/' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
-  var up = await supabase.storage.from('journal-images').upload(path, file);
-  if (up.error) { alert("L'article a été publié, mais l'image n'a pas pu être envoyée : " + up.error.message); return null; }
+  var blob = await compressImage(file);
+  var path = currentTable.id + '/' + entryId + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
+  var up = await supabase.storage.from('journal-images').upload(path, blob, { contentType: 'image/jpeg' });
+  if (up.error) { alert("Une image n'a pas pu être envoyée : " + up.error.message); return null; }
   var pub = supabase.storage.from('journal-images').getPublicUrl(path);
   return pub.data && pub.data.publicUrl;
+}
+
+// Best-effort : retire une image du stockage lors d'un remplacement ou d'une suppression.
+// N'agit que sur les images de source 'upload' — les liens externes n'ont rien à effacer ici.
+async function removeStoredImage(url) {
+  try {
+    var marker = '/journal-images/';
+    var idx = url.indexOf(marker);
+    if (idx === -1) return;
+    var path = url.substring(idx + marker.length);
+    await supabase.storage.from('journal-images').remove([path]);
+  } catch (e) {}
 }
 
 document.getElementById('new-entry-btn').addEventListener('click', async function () {
@@ -288,22 +635,34 @@ document.getElementById('new-entry-btn').addEventListener('click', async functio
   errEl.textContent = '';
   var title = document.getElementById('new-title').value.trim();
   var body = document.getElementById('new-body').value.trim();
-  var file = document.getElementById('new-image').files[0];
+  var sessionRaw = document.getElementById('new-session').value.trim();
+  var sessionNumber = sessionRaw === '' ? null : parseInt(sessionRaw, 10);
+  var signedAs = document.getElementById('new-signed-as').value || null;
   if (!body) { errEl.textContent = 'Écris quelque chose avant de publier.'; return; }
+  var btn = document.getElementById('new-entry-btn');
+  btn.disabled = true;
   try {
     var res = await supabase.from('journal_entries').insert({
-      table_id: currentTable.id, author_id: currentUser.id, title: title, body: body
+      table_id: currentTable.id, author_id: currentUser.id, title: title, body: body,
+      session_number: sessionNumber, signed_as: signedAs
     }).select().single();
-    if (res.error) { errEl.textContent = res.error.message; return; }
-    if (file) {
-      var url = await uploadEntryImage(res.data.id, file);
-      if (url) await supabase.from('journal_entries').update({ image_url: url }).eq('id', res.data.id);
+    if (res.error) { errEl.textContent = res.error.message; btn.disabled = false; return; }
+
+    var finalImages = await resolveImageManager(newImageManager, res.data.id);
+    if (finalImages.length) {
+      await supabase.from('journal_entries').update({ images: finalImages }).eq('id', res.data.id);
     }
+
     document.getElementById('new-title').value = '';
     document.getElementById('new-body').value = '';
-    document.getElementById('new-image').value = '';
+    document.getElementById('new-session').value = '';
+    document.getElementById('new-images-slot').innerHTML = '';
+    newImageManager = createImageManager([]);
+    document.getElementById('new-images-slot').appendChild(newImageManager.el);
+
     loadEntries();
   } catch (e) { errEl.textContent = 'Erreur : ' + e.message; }
+  btn.disabled = false;
 });
 
 init();
