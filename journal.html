@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scion — Journal de bord</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #14121a;
+  --panel: #1e1b26;
+  --panel-raised: #262232;
+  --line: #37324a;
+  --line-soft: #2a2636;
+  --parchment: #ece3ce;
+  --text-muted: #a79cc0;
+  --text-faint: #6f6786;
+  --gold: #c6a15b;
+  --gold-bright: #ddc07f;
+  --garnet-bright: #c65f72;
+  --radius: 10px;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Work Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--parchment); font-family: var(--font-body); min-height: 100vh; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0 0 12px; }
+h1 { font-size: 24px; font-weight: 600; }
+h2 { font-size: 15px; font-family: var(--font-mono); text-transform:uppercase; letter-spacing:0.08em; color: var(--gold); font-weight:500; }
+h3 { font-size: 19px; font-weight: 600; margin-bottom:4px; }
+label { display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px; letter-spacing:0.02em; }
+.field { margin-bottom: 14px; }
+input[type="text"], input[type="file"], textarea {
+  width: 100%; background: var(--bg); color: var(--parchment); border: 1px solid var(--line);
+  border-radius: 6px; padding: 8px 10px; outline: none; font-size: 14px; font-family: var(--font-body);
+}
+textarea { min-height: 90px; resize: vertical; }
+input[type="text"]:focus, textarea:focus { border-color: var(--gold-bright); }
+.card { background: var(--panel); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 18px; }
+.btn {
+  display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line);
+  background: var(--panel-raised); color: var(--parchment); padding:8px 14px;
+  border-radius:20px; font-size:13px; cursor:pointer; text-decoration:none;
+}
+.btn:hover { border-color: var(--gold); }
+.btn-gold { border-color: var(--gold); color: var(--gold-bright); }
+.btn-sm { padding:5px 10px; font-size:11.5px; }
+.btn-ghost { background: transparent; }
+.btn[disabled] { opacity:0.5; cursor:default; }
+.error-text { color: var(--garnet-bright); font-size:13px; min-height:18px; }
+.muted { color: var(--text-muted); font-size:14px; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 50px 20px 80px; }
+.topline { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+.entry-meta { font-family: var(--font-mono); font-size:11.5px; color: var(--text-faint); margin-bottom:10px; }
+.entry-body { white-space: pre-wrap; line-height:1.6; font-size:14.5px; }
+.entry-image { max-width:100%; border-radius:8px; margin-top:12px; display:block; }
+.entry-actions { margin-top:12px; display:flex; gap:8px; }
+.comments { margin-top:16px; padding-top:14px; border-top:1px solid var(--line-soft); }
+.comment { padding:8px 0; border-bottom:1px solid var(--line-soft); font-size:13.5px; }
+.comment:last-child { border-bottom:none; }
+.comment-meta { font-family: var(--font-mono); font-size:10.5px; color: var(--text-faint); margin-bottom:2px; }
+.comment-form { display:flex; gap:8px; margin-top:10px; }
+.comment-form textarea { min-height:38px; flex:1; }
+</style>
+</head>
+<body>
+
+<div id="screen-gate" style="max-width:460px;margin:100px auto;padding:0 20px;text-align:center;">
+  <div class="card">
+    <p id="gate-message" class="muted">Chargement…</p>
+    <a href="index.html" class="btn btn-sm" style="margin-top:10px;">← Retour à l'accueil</a>
+  </div>
+</div>
+
+<div id="journal-app" class="wrap" style="display:none;">
+  <div class="topline">
+    <h1 id="journal-title">Journal de bord</h1>
+    <a id="back-link" href="index.html" class="btn btn-sm btn-ghost">🗂 Table</a>
+  </div>
+
+  <div class="card">
+    <h2>Nouvel article</h2>
+    <div class="field"><label for="new-title">Titre</label><input id="new-title" type="text" placeholder="Titre de l'article (optionnel)"></div>
+    <div class="field"><label for="new-body">Texte</label><textarea id="new-body" placeholder="Raconte…"></textarea></div>
+    <div class="field"><label for="new-image">Image (optionnelle)</label><input id="new-image" type="file" accept="image/*"></div>
+    <div id="new-entry-error" class="error-text"></div>
+    <button type="button" class="btn btn-gold" id="new-entry-btn">Publier</button>
+  </div>
+
+  <div id="entries-list"></div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://nlskjszxwipbgosxvjkq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sc2tqc3p4d2lwYmdvc3h2amtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE0NjEsImV4cCI6MjEwNDM1NzQ2MX0.VFjq8YaaCpVG8OK4DY9lDJw0JkQtBeOoEZhPeCbpz0c';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+var currentUser = null;
+var currentTable = null;
+var memberNames = {}; // user_id -> pseudo, pour cette table
+
+var dateFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function fmtDate(iso) { try { return dateFmt.format(new Date(iso)); } catch (e) { return iso; } }
+function nameOf(userId) { return memberNames[userId] || 'Joueur inconnu'; }
+function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+function showGate(msg) {
+  document.getElementById('gate-message').textContent = msg;
+  document.getElementById('screen-gate').style.display = '';
+  document.getElementById('journal-app').style.display = 'none';
+}
+
+async function init() {
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('table');
+  if (!code) { showGate('Aucune table indiquée. Reviens à l\'accueil.'); return; }
+
+  var sessionRes = await supabase.auth.getSession();
+  var session = sessionRes.data && sessionRes.data.session;
+  if (!session) { showGate('Tu dois être connecté pour accéder au journal.'); return; }
+  currentUser = session.user;
+
+  var tableRes = await supabase.from('tables').select('*').eq('code', code).maybeSingle();
+  if (tableRes.error || !tableRes.data) { showGate('Cette table est introuvable.'); return; }
+  currentTable = tableRes.data;
+
+  var memberRes = await supabase.from('table_members').select('user_id, display_name').eq('table_id', currentTable.id);
+  if (memberRes.error) { showGate('Erreur : ' + memberRes.error.message); return; }
+  var mine = false;
+  (memberRes.data || []).forEach(function (m) {
+    memberNames[m.user_id] = m.display_name;
+    if (m.user_id === currentUser.id) mine = true;
+  });
+  if (!mine) { showGate("Tu n'es pas membre de cette table."); return; }
+
+  document.getElementById('journal-title').textContent = 'Journal de bord — ' + currentTable.name;
+  document.getElementById('back-link').href = 'index.html?table=' + encodeURIComponent(currentTable.code);
+  document.getElementById('screen-gate').style.display = 'none';
+  document.getElementById('journal-app').style.display = '';
+
+  loadEntries();
+}
+
+async function loadEntries() {
+  var el = document.getElementById('entries-list');
+  el.innerHTML = '<p class="muted">Chargement…</p>';
+  var res = await supabase
+    .from('journal_entries')
+    .select('*, journal_comments(*)')
+    .eq('table_id', currentTable.id)
+    .order('created_at', { ascending: false })
+    .order('created_at', { foreignTable: 'journal_comments', ascending: true });
+  if (res.error) { el.innerHTML = '<p class="error-text">Erreur : ' + escapeHtml(res.error.message) + '</p>'; return; }
+  renderEntries(res.data || []);
+}
+
+function renderEntries(entries) {
+  var el = document.getElementById('entries-list');
+  if (!entries.length) { el.innerHTML = '<p class="muted">Aucun article pour le moment — sois le premier à écrire quelque chose.</p>'; return; }
+  el.innerHTML = '';
+  entries.forEach(function (entry) { el.appendChild(renderEntryCard(entry)); });
+}
+
+function renderEntryCard(entry) {
+  var mine = entry.author_id === currentUser.id;
+  var card = document.createElement('div');
+  card.className = 'card';
+
+  var meta = document.createElement('div');
+  meta.className = 'entry-meta';
+  meta.textContent = nameOf(entry.author_id) + ' · ' + fmtDate(entry.created_at) + (entry.updated_at && entry.updated_at !== entry.created_at ? ' (modifié)' : '');
+  card.appendChild(meta);
+
+  var titleEl = document.createElement('h3');
+  titleEl.textContent = entry.title || '(Sans titre)';
+  card.appendChild(titleEl);
+
+  var bodyEl = document.createElement('div');
+  bodyEl.className = 'entry-body';
+  bodyEl.textContent = entry.body;
+  card.appendChild(bodyEl);
+
+  if (entry.image_url) {
+    var img = document.createElement('img');
+    img.className = 'entry-image';
+    img.src = entry.image_url;
+    img.alt = '';
+    card.appendChild(img);
+  }
+
+  if (mine) {
+    var actions = document.createElement('div');
+    actions.className = 'entry-actions';
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button'; editBtn.className = 'btn btn-sm'; editBtn.textContent = 'Modifier';
+    editBtn.addEventListener('click', function () { openEditForm(card, entry); });
+    actions.appendChild(editBtn);
+    card.appendChild(actions);
+  }
+
+  card.appendChild(renderComments(entry));
+  return card;
+}
+
+function openEditForm(card, entry) {
+  var wrap = document.createElement('div');
+  wrap.style.marginTop = '10px';
+  wrap.innerHTML =
+    '<div class="field"><label>Titre</label><input type="text" class="edit-title" value="' + escapeHtml(entry.title || '') + '"></div>' +
+    '<div class="field"><label>Texte</label><textarea class="edit-body">' + escapeHtml(entry.body) + '</textarea></div>' +
+    '<div class="field"><label>Remplacer l\'image (optionnel)</label><input type="file" class="edit-image" accept="image/*"></div>' +
+    '<div class="error-text edit-error"></div>' +
+    '<button type="button" class="btn btn-gold btn-sm edit-save">Enregistrer</button> ' +
+    '<button type="button" class="btn btn-sm btn-ghost edit-cancel">Annuler</button>';
+  card.appendChild(wrap);
+
+  wrap.querySelector('.edit-cancel').addEventListener('click', function () { loadEntries(); });
+  wrap.querySelector('.edit-save').addEventListener('click', async function () {
+    var errEl = wrap.querySelector('.edit-error');
+    errEl.textContent = '';
+    var title = wrap.querySelector('.edit-title').value.trim();
+    var body = wrap.querySelector('.edit-body').value.trim();
+    if (!body) { errEl.textContent = 'Le texte ne peut pas être vide.'; return; }
+    var file = wrap.querySelector('.edit-image').files[0];
+    try {
+      var upd = await supabase.from('journal_entries').update({ title: title, body: body, updated_at: new Date().toISOString() }).eq('id', entry.id);
+      if (upd.error) { errEl.textContent = upd.error.message; return; }
+      if (file) {
+        var url = await uploadEntryImage(entry.id, file);
+        if (url) await supabase.from('journal_entries').update({ image_url: url }).eq('id', entry.id);
+      }
+      loadEntries();
+    } catch (e) { errEl.textContent = 'Erreur : ' + e.message; }
+  });
+}
+
+function renderComments(entry) {
+  var wrap = document.createElement('div');
+  wrap.className = 'comments';
+
+  (entry.journal_comments || []).forEach(function (c) {
+    var cEl = document.createElement('div');
+    cEl.className = 'comment';
+    var cMeta = document.createElement('div');
+    cMeta.className = 'comment-meta';
+    cMeta.textContent = nameOf(c.author_id) + ' · ' + fmtDate(c.created_at);
+    cEl.appendChild(cMeta);
+    var cBody = document.createElement('div');
+    cBody.textContent = c.body;
+    cEl.appendChild(cBody);
+    wrap.appendChild(cEl);
+  });
+
+  var form = document.createElement('div');
+  form.className = 'comment-form';
+  form.innerHTML = '<textarea placeholder="Ajouter un commentaire…"></textarea><button type="button" class="btn btn-sm">Envoyer</button>';
+  var ta = form.querySelector('textarea');
+  var btn = form.querySelector('button');
+  btn.addEventListener('click', async function () {
+    var text = ta.value.trim();
+    if (!text) return;
+    btn.disabled = true;
+    var res = await supabase.from('journal_comments').insert({ entry_id: entry.id, author_id: currentUser.id, body: text });
+    btn.disabled = false;
+    if (res.error) { alert('Erreur : ' + res.error.message); return; }
+    loadEntries();
+  });
+  wrap.appendChild(form);
+
+  return wrap;
+}
+
+async function uploadEntryImage(entryId, file) {
+  var path = currentTable.id + '/' + entryId + '/' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+  var up = await supabase.storage.from('journal-images').upload(path, file);
+  if (up.error) { alert("L'article a été publié, mais l'image n'a pas pu être envoyée : " + up.error.message); return null; }
+  var pub = supabase.storage.from('journal-images').getPublicUrl(path);
+  return pub.data && pub.data.publicUrl;
+}
+
+document.getElementById('new-entry-btn').addEventListener('click', async function () {
+  var errEl = document.getElementById('new-entry-error');
+  errEl.textContent = '';
+  var title = document.getElementById('new-title').value.trim();
+  var body = document.getElementById('new-body').value.trim();
+  var file = document.getElementById('new-image').files[0];
+  if (!body) { errEl.textContent = 'Écris quelque chose avant de publier.'; return; }
+  try {
+    var res = await supabase.from('journal_entries').insert({
+      table_id: currentTable.id, author_id: currentUser.id, title: title, body: body
+    }).select().single();
+    if (res.error) { errEl.textContent = res.error.message; return; }
+    if (file) {
+      var url = await uploadEntryImage(res.data.id, file);
+      if (url) await supabase.from('journal_entries').update({ image_url: url }).eq('id', res.data.id);
+    }
+    document.getElementById('new-title').value = '';
+    document.getElementById('new-body').value = '';
+    document.getElementById('new-image').value = '';
+    loadEntries();
+  } catch (e) { errEl.textContent = 'Erreur : ' + e.message; }
+});
+
+init();
+</script>
+</body>
+</html>
