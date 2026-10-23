@@ -60,9 +60,11 @@ input::placeholder { color: var(--text-faint); font-style: italic; }
 .wrap { max-width: 480px; margin: 0 auto; padding: 60px 20px 80px; }
 .wrap-wide { max-width: 640px; }
 .topline { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-.char-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line-soft); }
+.char-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:10px 0; border-bottom:1px solid var(--line-soft); }
 .char-row:last-child { border-bottom: none; }
-.char-name { flex:1; }
+.char-name { flex:1; min-width:120px; }
+.vis-toggle { display:inline-flex; align-items:center; gap:6px; margin:0; font-size:12px; color:var(--text-muted); cursor:pointer; user-select:none; }
+.vis-toggle input { accent-color: var(--gold); cursor:pointer; margin:0; }
 .badge { font-family: var(--font-mono); font-size:10.5px; color: var(--text-faint); }
 .divider { display:flex; align-items:center; gap:10px; margin:16px 0; color: var(--text-faint); }
 .divider div { flex:1; height:1px; background: var(--line); }
@@ -349,6 +351,49 @@ async function loadCharacters() {
   } catch (e) { el.textContent = 'Erreur : ' + e.message; }
 }
 
+/* Case "Visible / Masqué" d'un de ses propres personnages : enregistrée tout de suite en base.
+   Visible = les autres joueurs de la table peuvent consulter la fiche (lecture seule). */
+function makeVisibilityToggle(row) {
+  var label = document.createElement('label');
+  label.className = 'vis-toggle';
+  label.title = 'Coché : les autres joueurs de la table peuvent consulter ce personnage (sans pouvoir le modifier).';
+
+  var input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = !!row.visible;
+
+  var text = document.createElement('span');
+  function refreshText() {
+    text.textContent = row.visible ? 'Visible' : 'Masqué';
+    text.style.color = '';
+  }
+  refreshText();
+
+  input.addEventListener('change', async function () {
+    var wanted = input.checked;
+    input.disabled = true;
+    setLobbyError('');
+    try {
+      var res = await supabase.from('characters').update({ visible: wanted }).eq('id', row.id).select('id');
+      if (res.error) throw res.error;
+      if (!res.data || !res.data.length) throw new Error("la base a refusé la modification");
+      row.visible = wanted;
+      refreshText();
+    } catch (e) {
+      input.checked = !!row.visible; // annule visuellement le changement
+      text.textContent = 'Échec';
+      text.style.color = 'var(--garnet-bright)';
+      setLobbyError('Impossible de changer la visibilité de « ' + (row.name || 'ce personnage') + ' » : ' + (e.message || e));
+      setTimeout(refreshText, 2500);
+    }
+    input.disabled = false;
+  });
+
+  label.appendChild(input);
+  label.appendChild(text);
+  return label;
+}
+
 function renderCharactersList() {
   var el = document.getElementById('lobby-characters-list');
   if (!currentCharacters.length) { el.innerHTML = '<p class="muted">Aucun personnage pour le moment.</p>'; return; }
@@ -363,12 +408,7 @@ function renderCharactersList() {
     label.textContent = row.name || '(Sans nom)';
     line.appendChild(label);
 
-    if (mine && row.visible) {
-      var badge = document.createElement('span');
-      badge.className = 'badge';
-      badge.textContent = 'VISIBLE';
-      line.appendChild(badge);
-    }
+    if (mine) line.appendChild(makeVisibilityToggle(row));
 
     var openLink = document.createElement('a');
     openLink.className = 'btn btn-sm';
