@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer son Scion mortel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : une « scène » 16:9 de film d'animation, sous-titres en bas, barre de chapitres cliquable. Look nocturne unique (bronze / vert-de-gris / lilas = Origine / Rôle / Panthéon). */
+:root{
+  --night:#0f1622;
+  --night-2:#16202f;
+  --panel:#1c2738;
+  --line:#2c3a50;
+  --ink:#e9e3d6;
+  --muted:#9aa4b4;
+  --bronze:#d2aa5f;
+  --verdigris:#62b8a6;
+  --lilac:#ae9fe6;
+  --warn:#e57a6a;
+  --f-display:"Marcellus", "Trajan Pro", Georgia, serif;
+  --f-body:"Alegreya Sans", "Gill Sans", "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--night);color:var(--ink)}
+body{font-family:var(--f-body);font-size:17px;line-height:1.45;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:20px 32px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:14px}
+.head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px}
+.head h1{font-family:var(--f-display);font-weight:400;font-size:1.35rem;margin:0;letter-spacing:.02em}
+.head small{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+
+/* ---------- scène ---------- */
+.stage{position:relative;display:grid;border:1px solid var(--line);border-radius:6px;overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 85% 0%, rgba(210,170,95,.10), transparent 55%),
+    radial-gradient(90% 80% at 0% 100%, rgba(98,184,166,.08), transparent 60%),
+    var(--night-2);
+  min-height:560px}
+@media (min-width:820px){.stage{aspect-ratio:16/9;min-height:0}}
+.stage::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;opacity:.35;pointer-events:none;
+  background:repeating-linear-gradient(90deg,var(--bronze) 0 2px,transparent 2px 10px,var(--bronze) 10px 12px,transparent 12px 20px)}
+.scene{grid-area:1/1;padding:clamp(18px,3.2vw,40px);padding-bottom:28px;display:grid;align-content:start;gap:clamp(12px,2vw,22px);min-width:0;visibility:hidden}
+.scene.active{visibility:visible}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze)}
+.scene h2{font-family:var(--f-display);font-weight:400;font-size:clamp(1.6rem,3.4vw,2.6rem);line-height:1.1;margin:0;text-wrap:balance}
+.lead{color:var(--muted);margin:0;max-width:60ch}
+
+/* apparition temporisée */
+.b{opacity:0;transform:translateY(10px);transition:opacity .55s ease, transform .55s cubic-bezier(.2,.8,.2,1), box-shadow .5s, border-color .5s, background-color .5s}
+.b.on{opacity:1;transform:none}
+.glow{transition:box-shadow .6s, border-color .6s, color .6s}
+.glow.lit{box-shadow:0 0 0 1px var(--bronze), 0 0 22px rgba(210,170,95,.35);border-color:var(--bronze)!important}
+
+/* points */
+.track{display:inline-flex;gap:5px;align-items:center}
+.d{width:13px;height:13px;border-radius:50%;border:1.5px solid #3c4b63;background:transparent;transition:background-color .35s, border-color .35s, transform .35s}
+.d.on{transform:scale(1.08)}
+.d.base.on,.d.n.on{background:var(--ink);border-color:var(--ink)}
+.d.o.on{background:var(--verdigris);border-color:var(--verdigris)}
+.d.r.on{background:var(--bronze);border-color:var(--bronze)}
+.d.p.on{background:var(--lilac);border-color:var(--lilac)}
+.d.a.on{background:var(--bronze);border-color:var(--bronze)}
+.d.over{opacity:0;border-color:var(--warn);border-style:dashed;transition:opacity .4s, transform .6s}
+.d.over.on{opacity:1;background:rgba(229,122,106,.35)}
+
+/* cartes */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:14px 16px;min-width:0}
+.card h3{font-family:var(--f-display);font-weight:400;font-size:1.15rem;margin:0 0 4px}
+.k{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.grid3{grid-template-columns:1fr}}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.88rem;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+.note{border-left:2px solid var(--bronze);padding:4px 0 4px 12px;color:var(--ink);font-size:.95rem;max-width:62ch}
+.note b{color:var(--bronze);font-weight:500}
+.o-c{color:var(--verdigris)} .r-c{color:var(--bronze)} .p-c{color:var(--lilac)}
+.mark-o{border-top:3px solid var(--verdigris)} .mark-r{border-top:3px solid var(--bronze)} .mark-p{border-top:3px solid var(--lilac)}
+
+/* scène 0 */
+.title-big{font-family:var(--f-display);font-size:clamp(2.2rem,6vw,4.4rem);line-height:1;margin:0;font-weight:400;text-wrap:balance}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;counter-reset:s;margin-top:8px}
+@media (max-width:620px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.steps div{border-top:1px solid var(--line);padding-top:8px;font-size:.98rem}
+.steps div span{display:block;font-family:var(--f-mono);font-size:.7rem;color:var(--bronze);letter-spacing:.1em}
+
+/* concept */
+.concept{font-family:var(--f-display);font-size:clamp(1.25rem,2.6vw,1.8rem);line-height:1.2}
+.split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.split{grid-template-columns:1fr}}
+.acte{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:baseline}
+.acte .k{grid-row:span 2;writing-mode:horizontal-tb;min-width:7.5em}
+.acte em{color:var(--muted);font-size:.85rem;font-style:normal}
+
+/* compétences */
+.prio{display:flex;flex-wrap:wrap;gap:8px}
+.prio .chip{padding:5px 11px}
+.skills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 28px}
+@media (max-width:640px){.skills{grid-template-columns:1fr}}
+.sk{display:grid;grid-template-columns:8.5em auto 1fr;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid rgba(44,58,80,.6);min-width:0}
+.sk .spec{font-size:.82rem;color:var(--bronze);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* attributs */
+.attr{display:grid;grid-template-columns:7.5em repeat(3,minmax(0,1fr));gap:8px;overflow-x:auto}
+.attr .hd{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.attr .rowhd{font-family:var(--f-display);font-size:1rem;color:var(--ink);display:flex;align-items:center;border:1px solid transparent;border-radius:4px;padding:0 6px}
+.cell{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:8px 10px;display:grid;gap:6px;min-width:0}
+.cell .nm{display:flex;justify-content:space-between;gap:6px;font-size:.95rem}
+.cell .v{font-family:var(--f-mono);color:var(--bronze);font-variant-numeric:tabular-nums}
+.badge{font-family:var(--f-mono);font-size:.72rem;color:var(--night);background:var(--bronze);border-radius:3px;padding:1px 6px;letter-spacing:.04em}
+@media (max-width:620px){.attr{grid-template-columns:5.6em repeat(3,minmax(5.5em,1fr))}.cell .nm{font-size:.82rem}.d{width:10px;height:10px}.track{gap:3px}}
+
+/* finitions */
+.formula{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:1.02rem}
+.formula .op{color:var(--muted);font-family:var(--f-mono)}
+.formula .res{font-family:var(--f-mono);color:var(--night);background:var(--bronze);padding:2px 8px;border-radius:3px}
+.health{display:flex;flex-wrap:wrap;gap:8px}
+.hb{display:grid;justify-items:center;gap:4px;font-size:.8rem;color:var(--muted)}
+.hb i{display:block;width:34px;height:34px;border:1.5px solid var(--ink);border-radius:3px;font-style:normal;display:grid;place-items:center;font-family:var(--f-mono);font-size:.78rem;color:var(--ink)}
+.hb.bonus i{border-color:var(--bronze);color:var(--bronze)}
+
+/* sous-titres */
+.caps{min-height:3.2em;display:grid;align-items:center;justify-items:center;text-align:center}
+.cap{grid-area:1/1;opacity:0;transition:opacity .4s;font-size:1.08rem;max-width:66ch;text-wrap:balance}
+.cap.show{opacity:1}
+
+/* contrôles */
+.ctrl{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
+.btns{display:flex;gap:6px}
+button{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:4px;min-width:42px;height:38px;padding:0 12px;cursor:pointer}
+button:hover{border-color:var(--bronze)}
+button:focus-visible{outline:2px solid var(--bronze);outline-offset:2px}
+button.play{background:var(--bronze);color:var(--night);border-color:var(--bronze);font-weight:700;min-width:96px}
+.chapters{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:4px}
+.chap{background:none;border:0;padding:0;height:auto;min-width:0;display:grid;gap:5px;text-align:left;cursor:pointer}
+.chap .bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.chap .bar span{display:block;height:100%;width:0;background:var(--bronze)}
+.chap .lb{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.06em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chap.cur .lb{color:var(--ink)}
+@media (max-width:620px){.chap .lb{display:none}.ctrl{grid-template-columns:1fr}}
+.foot{font-size:.82rem;color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){
+  .b,.d,.cap,.glow{transition:none!important}
+  .b{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="head">
+    <h1>Créer son Scion mortel</h1>
+    <small>D'après Scion : Origine, chap. 3</small>
+  </div>
+
+  <div class="stage" id="stage">
+
+    <!-- 0 · Titre -->
+    <section class="scene" data-dur="9000" data-label="Introduction">
+      <div class="eyebrow b" data-at="0">Tutoriel · niveau mortel</div>
+      <p class="title-big b" data-at="200">Créer son<br>Scion mortel</p>
+      <p class="lead b" data-at="700">Six étapes, du concept aux derniers détails. Exemple suivi : Inès, coursière à vélo à Montpellier, protégée des Theoi sans le savoir encore.</p>
+      <div class="steps">
+        <div class="b" data-at="1400"><span>Étape 1</span>Concept &amp; Actes</div>
+        <div class="b" data-at="1700"><span>Étape 2</span>Chemins</div>
+        <div class="b" data-at="2000"><span>Étape 3</span>Compétences</div>
+        <div class="b" data-at="2300"><span>Étape 4</span>Attributs</div>
+        <div class="b" data-at="2600"><span>Étape 5</span>Vocation &amp; Talent</div>
+        <div class="b" data-at="2900"><span>Étape 6</span>Touches finales</div>
+      </div>
+      <template class="caps-src">
+        <p data-at="0">Avant sa Visitation, un Scion est encore un mortel. Voici comment le construire.</p>
+        <p data-at="4500">On suit un exemple du début à la fin : Inès, coursière à vélo.</p>
+      </template>
+    </section>
+
+    <!-- 1 · Concept -->
+    <section class="scene" data-dur="19000" data-label="1 · Concept">
+      <div class="eyebrow b" data-at="0">Étape 1</div>
+      <h2 class="b" data-at="0">Concept &amp; Actes</h2>
+      <div class="split">
+        <div style="display:grid;gap:12px;min-width:0">
+          <div class="card b" data-at="900">
+            <div class="k">Concept</div>
+            <div class="concept">Coursière à vélo qui connaît chaque ruelle de l'Écusson</div>
+          </div>
+          <div class="row">
+            <span class="chip b" data-at="4000"><span class="k">Panthéon</span> Theoi</span>
+            <span class="chip b" data-at="4500"><span class="k">Parent divin</span> à fixer dès maintenant</span>
+          </div>
+          <p class="note b" data-at="12000">Tous les Actes court terme accomplis <b>dans la même séance</b> : chaque joueur présent gagne <b>1 XP</b>.</p>
+        </div>
+        <div style="display:grid;gap:10px;min-width:0">
+          <div class="card acte b" data-at="7000"><span class="k">Court terme</span><span>Livrer un colis étrange sans l'ouvrir</span><em>Réalisable en une séance</em></div>
+          <div class="card acte b" data-at="8200"><span class="k">Long terme</span><span>Monter sa propre coopérative de coursiers</span><em>Un arc entier, lié à un Chemin</em></div>
+          <div class="card acte b" data-at="9400"><span class="k">De groupe</span><span>Libérer l'Écusson d'un culte titanique</span><em>Choisi par toute la table, identique pour tous</em></div>
+        </div>
+      </div>
+      <template class="caps-src">
+        <p data-at="0">Résumez votre personnage en une courte phrase, comme un synopsis de film.</p>
+        <p data-at="4000">Un Scion pré-Visitation choisit aussi son parent divin et le panthéon auquel il se rattache.</p>
+        <p data-at="7000">Choisissez ensuite trois Actes : court terme, long terme et de groupe.</p>
+        <p data-at="12000">Les Actes se jouent à plusieurs : aidez aussi les autres à accomplir les leurs.</p>
+        <p data-at="15500">Un Acte échoué ? Au niveau mortel, on en choisit simplement un nouveau, lié au précédent.</p>
+      </template>
+    </section>
+
+    <!-- 2 · Chemins -->
+    <section class="scene" data-dur="20000" data-label="2 · Chemins">
+      <div class="eyebrow b" data-at="0">Étape 2</div>
+      <h2 class="b" data-at="0">Trois Chemins</h2>
+      <div class="grid3">
+        <div class="card mark-o b" data-at="1200">
+          <div class="k o-c">Origine · d'où vous venez</div>
+          <h3>Gamine de la Paillade</h3>
+          <div class="row" style="gap:6px;margin-top:8px">
+            <span class="chip glow b" data-at="2000" id="emp-o">Empathie</span>
+            <span class="chip b" data-at="2150">Subterfuge</span>
+            <span class="chip b" data-at="2300">Survie</span>
+          </div>
+        </div>
+        <div class="card mark-r b" data-at="2600">
+          <div class="k r-c">Rôle · ce que vous faites</div>
+          <h3>Coursière des ruelles</h3>
+          <div class="row" style="gap:6px;margin-top:8px">
+            <span class="chip b" data-at="3400">Athlétisme</span>
+            <span class="chip b" data-at="3550">Culture</span>
+            <span class="chip b" data-at="3700">Pilotage</span>
+          </div>
+        </div>
+        <div class="card mark-p b" data-at="4000">
+          <div class="k p-c">Panthéon · votre lien au divin</div>
+          <h3>Protégée des Theoi</h3>
+          <div class="row" style="gap:6px;margin-top:8px">
+            <span class="chip glow b" data-at="4800" id="emp-p">Empathie</span>
+            <span class="chip b" data-at="4950">Persuasion</span>
+            <span class="chip b" data-at="5100">Occulte <span class="k">au choix</span></span>
+          </div>
+        </div>
+      </div>
+      <p class="note b" data-at="7500">Chaque Chemin : une courte description, <b>3 Compétences</b>, des connexions (<b>groupe, contact, accès</b>) et une <b>Condition de Chemin</b> qui se déclenche si on l'invoque trop souvent.</p>
+      <p class="note b" data-at="11000">Chemin de Panthéon : les <b>2 Compétences du panthéon</b> (Theoi : Empathie, Persuasion) <b>+ 1 au choix</b>.</p>
+      <template class="caps-src">
+        <p data-at="0">Trois Chemins disent qui était votre personnage, ce qu'il fait, et à quoi il est lié.</p>
+        <p data-at="7500">Chacun apporte des Compétences, des connexions et une Condition.</p>
+        <p data-at="11000">Le Chemin de Panthéon impose les deux Compétences du panthéon, la troisième est libre.</p>
+        <p data-at="15000">Une même Compétence peut figurer sur deux Chemins au maximum, comme Empathie ici.</p>
+      </template>
+      <i class="glow-trigger" data-at="15000" data-glow="emp-o,emp-p" hidden></i>
+    </section>
+
+    <!-- 3 · Compétences -->
+    <section class="scene" data-dur="21000" data-label="3 · Compétences">
+      <div class="eyebrow b" data-at="0">Étape 3</div>
+      <h2 class="b" data-at="0">Compétences</h2>
+      <div class="prio">
+        <span class="chip b" data-at="1500"><span class="k">Primaire</span> <span class="r-c">Rôle</span> <span class="track"><i class="d r on"></i><i class="d r on"></i><i class="d r on"></i></span></span>
+        <span class="chip b" data-at="2500"><span class="k">Secondaire</span> <span class="o-c">Origine</span> <span class="track"><i class="d o on"></i><i class="d o on"></i></span></span>
+        <span class="chip b" data-at="3500"><span class="k">Tertiaire</span> <span class="p-c">Panthéon</span> <span class="track"><i class="d p on"></i></span></span>
+      </div>
+      <div class="card b" data-at="4500">
+        <div class="skills" id="skills"></div>
+      </div>
+      <div class="row" style="gap:10px 24px">
+        <p class="note b" data-at="12500" style="margin:0">Les points <b>se cumulent</b>. Au-delà de 5, l'excédent va sur une autre Compétence de Chemin.</p>
+        <p class="note b" data-at="15000" style="margin:0">Une <b>Spécialité</b> gratuite pour chaque Compétence à 3 ou plus.</p>
+      </div>
+      <template class="caps-src">
+        <p data-at="0">Classez vos Chemins : primaire, secondaire, tertiaire.</p>
+        <p data-at="5500">Chaque Compétence du Chemin primaire reçoit 3 points, du secondaire 2, du tertiaire 1.</p>
+        <p data-at="11500">Empathie figure sur deux Chemins : 2 + 1, elle monte à 3.</p>
+        <p data-at="15000">Chaque Compétence à 3 ou plus gagne une Spécialité, gratuite seulement à la création.</p>
+      </template>
+    </section>
+
+    <!-- 4 · Attributs -->
+    <section class="scene" data-dur="24000" data-label="4 · Attributs">
+      <div class="eyebrow b" data-at="0">Étape 4</div>
+      <h2 class="b" data-at="0">Attributs</h2>
+      <div class="attr b" data-at="1200" id="attr"></div>
+      <template class="caps-src">
+        <p data-at="0">Neuf Attributs, rangés en trois Arènes et trois Approches.</p>
+        <p data-at="2500">Chaque Attribut commence à 1 point.</p>
+        <p data-at="4500">Classez les Arènes : 6 points pour la primaire, 4 pour la secondaire, 2 pour la tertiaire.</p>
+        <p data-at="12500">Choisissez une Approche favorite : +2 points à chacun de ses trois Attributs.</p>
+        <p data-at="15300">Aucun Attribut ne dépasse 5. L'excédent passe sur un autre Attribut de la même Arène.</p>
+        <p data-at="19500">Résultat : une coursière vive et rusée, mais peu studieuse.</p>
+      </template>
+    </section>
+
+    <!-- 5 · Vocation -->
+    <section class="scene" data-dur="15000" data-label="5 · Vocation">
+      <div class="eyebrow b" data-at="0">Étape 5</div>
+      <h2 class="b" data-at="0">Vocation &amp; Talent</h2>
+      <div class="grid3">
+        <div class="card b" data-at="1500"><div class="k">Vocation favorite du parent</div><h3>Première</h3></div>
+        <div class="card glow b" data-at="1800" id="voc2"><div class="k">Vocation favorite du parent</div><h3>Deuxième</h3><span class="track b" data-at="3800"><i class="d a on"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i></span></div>
+        <div class="card b" data-at="2100"><div class="k">Vocation favorite du parent</div><h3>Troisième</h3></div>
+      </div>
+      <i class="glow-trigger" data-at="3500" data-glow="voc2" hidden></i>
+      <div class="split">
+        <p class="note b" data-at="5000" style="margin:0"><b>Scion pré-Visitation</b> : la Vocation choisie doit faire partie des trois Vocations favorites du parent divin.</p>
+        <p class="note b" data-at="8000" style="margin:0"><b>Créature de Légende</b> : une liste de Vocation adaptée à sa nature.</p>
+      </div>
+      <div class="card b" data-at="10500" style="max-width:420px"><div class="k">Talent</div><h3>1 Talent de cette Vocation</h3></div>
+      <template class="caps-src">
+        <p data-at="0">Au niveau mortel, une seule Vocation est active. Mettez-y 1 point.</p>
+        <p data-at="5000">Si vous êtes un Scion pré-Visitation, elle vient des Vocations favorites de votre parent divin.</p>
+        <p data-at="10500">Cette Vocation vous donne un Talent, à choisir dans sa liste.</p>
+      </template>
+    </section>
+
+    <!-- 6 · Touches finales -->
+    <section class="scene" data-dur="24000" data-label="6 · Finitions">
+      <div class="eyebrow b" data-at="0">Étape 6</div>
+      <h2 class="b" data-at="0">Touches finales</h2>
+      <div class="grid3">
+        <div class="card b" data-at="1200"><div class="k">Compétences</div><h3>+5 points</h3></div>
+        <div class="card b" data-at="2000"><div class="k">Attributs</div><h3>+1 point</h3></div>
+        <div class="card b" data-at="2800"><div class="k">Au choix</div><h3>2 Talents <span class="k">ou</span> 4 points de Privilèges</h3></div>
+      </div>
+      <div class="split">
+        <div style="display:grid;gap:14px;min-width:0">
+          <div class="card b" data-at="6500">
+            <div class="k">Mouvement</div>
+            <div class="formula">
+              <span class="b" data-at="7000">Athlétisme 3</span>
+              <span class="op b" data-at="7600">+</span>
+              <span class="b" data-at="8000">le plus haut entre Force 2 et Dextérité 5</span>
+              <span class="op b" data-at="8800">=</span>
+              <span class="res b" data-at="9200">8 dés</span>
+            </div>
+          </div>
+          <div class="card b" data-at="10500">
+            <div class="k">Défense</div>
+            <div class="formula"><span>Réserve tirée d'un Attribut de Résistance, en général</span> <span class="res">Endurance 4</span></div>
+          </div>
+        </div>
+        <div class="card b" data-at="14500">
+          <div class="k">Santé</div>
+          <div class="health" style="margin-top:8px">
+            <div class="hb"><i>+1</i>Contusion</div>
+            <div class="hb bonus b" data-at="16500"><i>+1</i>Contusion</div>
+            <div class="hb"><i>+2</i>Meurtri</div>
+            <div class="hb"><i>+4</i>Mutilé</div>
+            <div class="hb"><i>HJ</i>Hors-Jeu</div>
+          </div>
+          <p class="foot" style="margin:8px 0 0">Endurance 3–4 : une Contusion de plus. Endurance 5 : deux.</p>
+        </div>
+      </div>
+      <template class="caps-src">
+        <p data-at="0">Dernière étape : les points bonus, puis les valeurs calculées.</p>
+        <p data-at="6000">Mouvement : Athlétisme plus le plus haut entre Force et Dextérité.</p>
+        <p data-at="10500">La Défense repose sur un Attribut de Résistance, en général l'Endurance.</p>
+        <p data-at="14500">Santé : une case par niveau de blessure, plus une Contusion grâce à l'Endurance 4 d'Inès.</p>
+        <p data-at="19500">Recalculez ces valeurs si vos points bonus les modifient.</p>
+      </template>
+    </section>
+
+    <!-- 7 · Récap -->
+    <section class="scene" data-dur="11000" data-label="Récap">
+      <div class="eyebrow b" data-at="0">Fiche terminée</div>
+      <h2 class="b" data-at="0">Inès, coursière des ruelles</h2>
+      <div class="grid3">
+        <div class="card b" data-at="800"><div class="k">Chemins</div>
+          <div><span class="r-c">Rôle</span> Coursière des ruelles</div>
+          <div><span class="o-c">Origine</span> Gamine de la Paillade</div>
+          <div><span class="p-c">Panthéon</span> Protégée des Theoi</div></div>
+        <div class="card b" data-at="1300"><div class="k">Points forts</div>
+          <div>Ruse 5 · Dextérité 5 · Manipulation 4</div>
+          <div>Athlétisme, Culture, Pilotage, Empathie à 3</div></div>
+        <div class="card b" data-at="1800"><div class="k">Combat</div>
+          <div>Mouvement 8 dés</div><div>Défense : Endurance 4</div><div>Santé : 5 cases</div></div>
+      </div>
+      <p class="note b" data-at="3500">Il reste l'essentiel : un nom, un visage, une tenue, une famille, des amis, des rivaux.</p>
+      <template class="caps-src">
+        <p data-at="0">Les chiffres sont posés. Donnez-lui maintenant une vie.</p>
+        <p data-at="5000">Votre Scion mortel est prêt pour sa première séance.</p>
+      </template>
+    </section>
+  </div>
+
+  <div class="caps" id="caps" aria-live="polite"></div>
+
+  <div class="ctrl">
+    <div class="btns">
+      <button type="button" id="prev" aria-label="Chapitre précédent">‹</button>
+      <button type="button" class="play" id="play">Lancer</button>
+      <button type="button" id="next" aria-label="Chapitre suivant">›</button>
+    </div>
+    <div class="chapters" id="chapters"></div>
+  </div>
+  <p class="foot">Espace : lecture/pause · flèches : chapitre précédent/suivant · cliquez un chapitre pour y aller. Règles : Scion : Origine, p. 94–99.</p>
+</div>
+
+<script>
+(function(){
+  /* ---------- construction des Compétences ---------- */
+  var SK=[
+    {n:"Athlétisme",dots:[["r",6000],["r",6150],["r",6300]],spec:"Parkour"},
+    {n:"Culture",dots:[["r",6000],["r",6150],["r",6300]],spec:"Nuits montpelliéraines"},
+    {n:"Pilotage",dots:[["r",6000],["r",6150],["r",6300]],spec:"Vélo"},
+    {n:"Empathie",dots:[["o",9000],["o",9150],["p",11500]],spec:"Clients pressés"},
+    {n:"Subterfuge",dots:[["o",9000],["o",9150]]},
+    {n:"Survie",dots:[["o",9000],["o",9150]]},
+    {n:"Persuasion",dots:[["p",11500]]},
+    {n:"Occulte",dots:[["p",11500]]}
+  ];
+  var skEl=document.getElementById("skills");
+  SK.forEach(function(s,i){
+    var row=document.createElement("div");row.className="sk";
+    var h='<span>'+s.n+'</span><span class="track">';
+    for(var k=0;k<5;k++){var d=s.dots[k];h+=d?'<i class="d '+d[0]+'" data-at="'+d[1]+'"></i>':'<i class="d"></i>';}
+    h+='</span>';
+    h+=s.spec?'<span class="spec b" data-at="'+(15300+i*250)+'">'+s.spec+'</span>':'<span></span>';
+    row.innerHTML=h;skEl.appendChild(row);
+  });
+
+  /* ---------- construction des Attributs ---------- */
+  var COLS=[{n:"Mental",p:"2",at:5500},{n:"Physique",p:"6",at:4500},{n:"Social",p:"4",at:5000}];
+  var ROWS=["Puissance","Finesse","Résistance"];
+  // [nom, points d'Arène (timings), points d'Approche, valeur finale]
+  var CELLS=[
+    [["Intellect",[],[],1],["Force",[7000],[],2],["Présence",[9200,9500],[],3]],
+    [["Ruse",[10800,11100],[13500,13700],5],["Dextérité",[7300,7600,7900],[14100,14300],5],["Manipulation",[9800],[14700,14900],4]],
+    [["Résolution",[],[],1],["Endurance",[8200,8500],[],4],["Calme",[10100],[],2]]
+  ];
+  var aEl=document.getElementById("attr");
+  var h='<div class="hd">Approche \\ Arène</div>';
+  COLS.forEach(function(c){h+='<div class="hd">'+c.n+' <span class="badge b" data-at="'+c.at+'">'+c.p+' pts</span></div>';});
+  CELLS.forEach(function(row,ri){
+    h+='<div class="rowhd'+(ri===1?' glow':'')+'" '+(ri===1?'id="finesse"':'')+'>'+ROWS[ri]+'</div>';
+    row.forEach(function(c){
+      var t='<span class="track"><i class="d base" data-at="2500"></i>';
+      var slots=[];
+      c[1].forEach(function(at){slots.push(["n",at]);});
+      c[2].forEach(function(at){slots.push(["a",at]);});
+      var over=null;
+      if(c[0]==="Dextérité"){over=slots.pop();}
+      if(c[0]==="Endurance"){slots.push(["a",17000]);}
+      for(var k=0;k<4;k++){var s=slots[k];t+=s?'<i class="d '+s[0]+'" data-at="'+s[1]+'"></i>':'<i class="d"></i>';}
+      if(over){t+='<i class="d over" data-at="'+over[1]+'" data-off="16600"></i>';}
+      t+='</span>';
+      h+='<div class="cell"><div class="nm"><span>'+c[0]+'</span><span class="v b" data-at="19000">'+c[3]+'</span></div>'+t+'</div>';
+    });
+  });
+  aEl.innerHTML=h;
+  var gt=document.createElement("i");gt.className="glow-trigger";gt.hidden=true;gt.dataset.at="12500";gt.dataset.glow="finesse";
+  aEl.parentNode.appendChild(gt);
+
+  /* ---------- moteur de lecture ---------- */
+  var scenes=[].slice.call(document.querySelectorAll(".scene"));
+  var capsEl=document.getElementById("caps");
+  var chapEl=document.getElementById("chapters");
+  chapEl.style.setProperty("--n",scenes.length);
+  var data=scenes.map(function(sc,i){
+    var tpl=sc.querySelector("template.caps-src");
+    var caps=[];
+    if(tpl){[].slice.call(tpl.content.querySelectorAll("p")).forEach(function(p){
+      var el=document.createElement("p");el.className="cap";el.textContent=p.textContent;el.hidden=true;capsEl.appendChild(el);
+      caps.push({at:+p.dataset.at,el:el});});}
+    var btn=document.createElement("button");btn.type="button";btn.className="chap";
+    btn.innerHTML='<span class="bar"><span></span></span><span class="lb">'+sc.dataset.label+'</span>';
+    btn.setAttribute("aria-label","Aller à "+sc.dataset.label);
+    btn.addEventListener("click",function(){go(i,0);if(!playing)togglePlay(true);});
+    chapEl.appendChild(btn);
+    return {el:sc,dur:+sc.dataset.dur,beats:[].slice.call(sc.querySelectorAll("[data-at]")).filter(function(e){return !e.closest("template");}),
+      glows:[].slice.call(sc.querySelectorAll(".glow-trigger")),caps:caps,bar:btn.querySelector(".bar span"),btn:btn};
+  });
+
+  var idx=0,t=0,playing=false,fresh=true,last=0;
+  var playBtn=document.getElementById("play");
+
+  function render(){
+    data.forEach(function(s,i){
+      var act=i===idx;
+      s.el.classList.toggle("active",act);
+      s.btn.classList.toggle("cur",act);
+      s.bar.style.width=(i<idx?100:act?Math.min(100,t/s.dur*100):0)+"%";
+      s.caps.forEach(function(c){c.el.hidden=!act;});
+      if(!act) return;
+      s.beats.forEach(function(e){
+        var on=t>=+e.dataset.at && (e.dataset.off===undefined || t<+e.dataset.off);
+        e.classList.toggle("on",on);
+      });
+      s.el.querySelectorAll(".glow").forEach(function(g){g.classList.remove("lit");});
+      s.glows.forEach(function(g){
+        if(t>=+g.dataset.at) g.dataset.glow.split(",").forEach(function(id){var x=document.getElementById(id);if(x)x.classList.add("lit");});
+      });
+      var cur=null;s.caps.forEach(function(c){if(t>=c.at)cur=c;});
+      s.caps.forEach(function(c){c.el.classList.toggle("show",c===cur);});
+    });
+  }
+  function go(i,time){idx=Math.max(0,Math.min(scenes.length-1,i));t=time||0;fresh=false;render();}
+  function togglePlay(force){
+    playing=typeof force==="boolean"?force:!playing;
+    if(playing&&fresh){fresh=false;t=0;}
+    if(playing&&idx===scenes.length-1&&t>=data[idx].dur){idx=0;t=0;}
+    playBtn.textContent=playing?"Pause":(t>0||idx>0?"Reprendre":"Lancer");
+    last=performance.now();
+    if(playing)requestAnimationFrame(tick);
+    render();
+  }
+  function tick(now){
+    if(!playing)return;
+    t+=Math.min(100,now-last);last=now;
+    if(t>=data[idx].dur){
+      if(idx<scenes.length-1){idx++;t=0;}
+      else{t=data[idx].dur;render();togglePlay(false);playBtn.textContent="Revoir";return;}
+    }
+    render();requestAnimationFrame(tick);
+  }
+  playBtn.addEventListener("click",function(){togglePlay();});
+  document.getElementById("prev").addEventListener("click",function(){go(t>1500?idx:idx-1,0);});
+  document.getElementById("next").addEventListener("click",function(){go(idx+1,0);});
+  document.addEventListener("keydown",function(e){
+    if(e.target.closest&&e.target.closest("button")&&e.key===" ")return;
+    if(e.key===" "){e.preventDefault();togglePlay();}
+    else if(e.key==="ArrowRight")go(idx+1,0);
+    else if(e.key==="ArrowLeft")go(idx-1,0);
+  });
+
+  // État au repos : écran-titre entièrement affiché
+  t=1e9;render();t=0;
+})();
+</script>
+
+</body>
+</html>
