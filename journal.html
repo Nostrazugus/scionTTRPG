@@ -4,154 +4,368 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scion — Journal de bord</title>
+<script>
+// Le Journal reprend le thème choisi dans le Codex (même réglage, même site), dès l'ouverture.
+try {
+  var savedTheme = localStorage.getItem('codexScionTheme');
+  if (savedTheme && /^(medievale|psychedelique|olympe|titan|neon-urbain)$/.test(savedTheme)) document.documentElement.setAttribute('data-theme', savedTheme);
+} catch (e) {}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Bungee&family=Marcellus&family=Metal+Mania&family=Monoton&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* ============================================================
+   Mêmes jetons et même mise en page « Grimoire » que le Codex :
+   titres dans la police du thème, texte courant en sérif, commandes en sans-sérif.
+   ============================================================ */
 :root {
+  color-scheme: dark;
   --bg: #14121a;
-  --panel: #1e1b26;
   --panel-raised: #262232;
-  --line: #37324a;
-  --line-soft: #2a2636;
   --parchment: #ece3ce;
-  --text-muted: #a79cc0;
-  --text-faint: #6f6786;
-  --gold: #c6a15b;
-  --gold-bright: #ddc07f;
-  --garnet-bright: #c65f72;
-  --radius: 10px;
+  --gold: #96832f;
+  --gold-bright: #bfa84f;
+  --danger: #c65f72;
+  --frame: #6b5a36;
+  --frame-soft: #3d3524;
+  --page: #1a1720;
+  --ink-soft: #cfc6e0;
+  --glow-a: rgba(198,161,91,0.08);
+  --glow-b: rgba(166,72,90,0.07);
   --font-display: 'Fraunces', serif;
+  --font-text: 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-body: 'Work Sans', sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
 }
+:root[data-theme="medievale"] {
+  --bg: #1c140d; --panel-raised: #3a2a1a; --parchment: #ecdfc0;
+  --gold: #b8860b; --gold-bright: #d4a017; --danger: #d4737d;
+  --frame: #6b4f30; --frame-soft: #4a3620; --page: #2b1f14; --ink-soft: #b8a179;
+  --glow-a: rgba(184,134,11,0.10); --glow-b: rgba(122,31,43,0.09);
+  --font-display: 'Cinzel', 'Fraunces', serif;
+}
+:root[data-theme="psychedelique"] {
+  --bg: #170026; --panel-raised: #3d1470; --parchment: #f5eeff;
+  --gold: #ff8c00; --gold-bright: #ffc93c; --danger: #ff6ec7;
+  --frame: #ff2fb0; --frame-soft: #7a2bd6; --page: #2c0a4d; --ink-soft: #d3a6ff;
+  --glow-a: rgba(255,140,0,0.30); --glow-b: rgba(255,30,142,0.28);
+  --font-display: 'Bungee', 'Fraunces', serif;
+}
+:root[data-theme="olympe"] {
+  --bg: #0f1a2e; --panel-raised: #24365a; --parchment: #f0e8d8;
+  --gold: #c9a544; --gold-bright: #e8c869; --danger: #e07560;
+  --frame: #8a6d3b; --frame-soft: #5c4a2a; --page: #1a2740; --ink-soft: #b8ab8f;
+  --glow-a: rgba(201,165,68,0.10); --glow-b: rgba(90,133,119,0.08);
+  --font-display: 'Marcellus', 'Fraunces', serif;
+}
+:root[data-theme="titan"] {
+  --bg: #0d0806; --panel-raised: #2a1c18; --parchment: #e8ddd5;
+  --gold: #d4560f; --gold-bright: #f0813a; --danger: #e0525f;
+  --frame: #8a3a1e; --frame-soft: #5c2814; --page: #1c1210; --ink-soft: #a89286;
+  --glow-a: rgba(212,86,15,0.14); --glow-b: rgba(138,21,32,0.12);
+  --font-display: 'Metal Mania', 'Fraunces', serif;
+}
+:root[data-theme="neon-urbain"] {
+  --bg: #0a0a12; --panel-raised: #1c1c2c; --parchment: #e8ecf5;
+  --gold: #ff2e88; --gold-bright: #ff6bb0; --danger: #ff4569;
+  --frame: #2de2e6; --frame-soft: #1a8a8f; --page: #14141f; --ink-soft: #8f9ab5;
+  --glow-a: rgba(255,46,136,0.14); --glow-b: rgba(45,226,230,0.12);
+  --font-display: 'Monoton', 'Fraunces', serif;
+}
+
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--parchment); font-family: var(--font-body); min-height: 100vh; }
-h1, h2, h3 { font-family: var(--font-display); margin: 0 0 12px; }
-h1 { font-size: 24px; font-weight: 600; }
-h2 { font-size: 15px; font-family: var(--font-mono); text-transform:uppercase; letter-spacing:0.08em; color: var(--gold); font-weight:500; }
-h3 { font-size: 19px; font-weight: 600; margin-bottom:4px; }
-label { display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px; letter-spacing:0.02em; }
-.field { margin-bottom: 14px; }
-input[type="text"], input[type="number"], input[type="file"], textarea, select {
-  width: 100%; background: var(--bg); color: var(--parchment); border: 1px solid var(--line);
-  border-radius: 6px; padding: 8px 10px; outline: none; font-size: 14px; font-family: var(--font-body);
+body {
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -10%, var(--glow-a), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 0%, var(--glow-b), transparent 55%);
+  background-attachment: fixed;
 }
-textarea { min-height: 90px; resize: vertical; }
-input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus { border-color: var(--gold-bright); }
-.md-hint { font-size:11.5px; color: var(--text-faint); margin-top:-8px; margin-bottom:14px; }
-.session-row { display:flex; gap:12px; }
-.session-row .field { flex:1; margin-bottom:14px; }
-.card { background: var(--panel); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 18px; }
+::selection { background: var(--gold); color: #14121a; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.01em; margin: 0; }
+p { margin: 0; }
+button, input, textarea, select { font-family: var(--font-body); }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+
+/* ---------- Commandes ---------- */
 .btn {
-  display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line);
-  background: var(--panel-raised); color: var(--parchment); padding:8px 14px;
-  border-radius:20px; font-size:13px; cursor:pointer; text-decoration:none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px; padding: 0 16px; border: 1px solid var(--frame); border-radius: 4px;
+  background: transparent; color: var(--parchment); font-size: 14px; text-decoration: none;
+  transition: border-color .15s ease, color .15s ease, transform .1s ease;
 }
-.btn:hover { border-color: var(--gold); }
-.btn-gold { border-color: var(--gold); color: var(--gold-bright); }
-.btn-sm { padding:5px 10px; font-size:11.5px; }
-.btn-ghost { background: transparent; }
-.btn[disabled] { opacity:0.5; cursor:default; }
-.error-text { color: var(--garnet-bright); font-size:13px; min-height:18px; }
-.muted { color: var(--text-muted); font-size:14px; }
-.wrap { max-width: 640px; margin: 0 auto; padding: 50px 20px 80px; }
-.topline { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
-.toolbar { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
-.toolbar input[type="text"] { flex:1; min-width:160px; }
-.toolbar select { width:auto; min-width:150px; }
-.badge { display:inline-block; font-family: var(--font-mono); font-size:10.5px; letter-spacing:0.03em; padding:2px 8px; border-radius:10px; white-space:nowrap; }
-.badge-new { background: rgba(198,161,91,0.18); color: var(--gold-bright); }
-.badge-gm { background: rgba(198,101,114,0.18); color: var(--garnet-bright); }
-.badge-session { background: var(--panel-raised); color: var(--text-muted); border:1px solid var(--line); }
-.entry-header-badges { display:flex; gap:6px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
-.entry-meta { font-family: var(--font-mono); font-size:11.5px; color: var(--text-faint); margin-bottom:10px; }
-.entry-body { white-space: pre-wrap; line-height:1.6; font-size:14.5px; }
-.entry-images { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-top:12px; }
-.entry-images img { width:100%; height:auto; max-height:220px; object-fit:cover; border-radius:8px; display:block; cursor:zoom-in; }
-.entry-actions { margin-top:12px; display:flex; gap:8px; }
-.comments { margin-top:16px; padding-top:14px; border-top:1px solid var(--line-soft); }
-.comment { padding:8px 0; border-bottom:1px solid var(--line-soft); font-size:13.5px; }
-.comment:last-child { border-bottom:none; }
-.comment-new { box-shadow: inset 3px 0 0 var(--gold); padding-left:8px; }
-.comment-meta { font-family: var(--font-mono); font-size:10.5px; color: var(--text-faint); margin-bottom:2px; }
-.comment-form { display:flex; gap:8px; margin-top:10px; }
-.comment-form textarea { min-height:38px; flex:1; }
-.lightbox { position:fixed; inset:0; background:rgba(10,9,14,0.92); display:flex; align-items:center; justify-content:center; z-index:999; cursor: zoom-out; padding:24px; }
-.lightbox img { max-width:100%; max-height:100%; border-radius:6px; }
-.image-manager-grid { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-.image-chip { position:relative; width:84px; height:84px; border-radius:8px; overflow:hidden; border:1px solid var(--line); flex-shrink:0; }
-.image-chip img { width:100%; height:100%; object-fit:cover; display:block; }
+.btn:hover { border-color: var(--gold-bright); color: var(--gold-bright); }
+.btn:active { transform: translateY(1px); }
+.btn-gold { border-color: var(--gold-bright); color: var(--gold-bright); }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { border-color: var(--danger); color: var(--danger); background: rgba(255,255,255,0.05); }
+.btn-ghost { border-color: transparent; color: var(--ink-soft); }
+.btn-sm { min-height: 34px; padding: 0 12px; font-size: 13px; }
+.btn[disabled] { opacity: 0.5; cursor: default; }
+
+label, .field-label { display: block; font-family: var(--font-text); font-size: 14.5px; font-variant: small-caps; letter-spacing: 0.1em; color: var(--ink-soft); margin-bottom: 5px; }
+.field { margin-bottom: 16px; min-width: 0; }
+input[type="text"], input[type="search"], input[type="number"], textarea, select {
+  width: 100%; background: var(--bg); color: var(--parchment); border: 1px solid var(--frame);
+  border-radius: 4px; padding: 10px 12px; outline: none; font-size: 14.5px; transition: border-color .15s ease;
+}
+input[type="text"], input[type="search"], input[type="number"], select { height: 44px; padding-top: 0; padding-bottom: 0; }
+textarea { min-height: 130px; resize: vertical; font-family: var(--font-text); font-size: 16.5px; line-height: 1.55; }
+input::placeholder, textarea::placeholder { color: var(--ink-soft); opacity: 0.7; font-style: italic; }
+input:focus, textarea:focus, select:focus { border-color: var(--gold-bright); }
+select {
+  appearance: none; -webkit-appearance: none; padding-right: 30px; cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23c6a24b' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 11px center;
+}
+select option { background: var(--panel-raised); color: var(--parchment); }
+input[type="file"] { width: 100%; font-size: 13.5px; color: var(--ink-soft); }
+input[type="file"]::file-selector-button {
+  font: inherit; margin-right: 12px; min-height: 36px; padding: 0 12px; border: 1px solid var(--frame);
+  border-radius: 4px; background: transparent; color: var(--parchment); cursor: pointer;
+}
+.md-hint { font-family: var(--font-text); font-style: italic; font-size: 14.5px; color: var(--ink-soft); margin: -8px 0 16px; }
+.session-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.session-row .field { flex: 1 1 200px; }
+.form-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.error-text { color: var(--danger); font-size: 14px; }
+.entry-form > .error-text { margin-bottom: 12px; }
+.error-text:empty, .image-manager-note:empty { display: none; }
+.muted { font-family: var(--font-text); font-style: italic; font-size: 16.5px; color: var(--ink-soft); text-align: center; padding: 26px 10px; }
+
+/* ---------- Page ---------- */
+.wrap { max-width: 800px; margin: 0 auto; padding: 34px 20px 72px; }
+#screen-gate { max-width: 480px; margin: 110px auto; padding: 0 20px; text-align: center; }
+#screen-gate .muted { padding: 0 0 16px; }
+
+/* Double filet, comme le livre du Codex : bordure intérieure + contour décalé. */
+.page {
+  margin: 9px; padding: 30px 36px 32px;
+  background: var(--page); border: 1px solid var(--frame-soft);
+  outline: 1px solid var(--frame); outline-offset: 8px;
+}
+
+/* ---------- Page de titre ---------- */
+#masthead { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; margin-bottom: 26px; }
+.masthead-rule { width: 100%; display: flex; align-items: center; gap: 18px; margin-bottom: 4px; }
+.masthead-rule span { flex: 1; height: 1px; background: var(--frame); }
+.masthead-rule svg { flex: none; stroke: var(--gold-bright); }
+#masthead h1 { font-size: clamp(36px, 7vw, 54px); line-height: 1.05; font-weight: 500; color: var(--parchment); }
+#masthead h1 span { font-weight: 600; color: var(--gold-bright); }
+:root:not([data-theme]) #masthead h1 { font-style: italic; }
+:root:not([data-theme]) #masthead h1 span { font-style: normal; }
+.masthead-sub { font-family: var(--font-text); font-style: italic; font-size: 17px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.masthead-actions { margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+.theme-picker { position: relative; }
+.theme-picker-panel {
+  display: none; position: absolute; top: calc(100% + 8px); right: 0; text-align: left;
+  background: var(--panel-raised); border: 1px solid var(--frame); border-radius: 4px;
+  padding: 6px; min-width: 190px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.theme-picker-panel.show { display: flex; flex-direction: column; gap: 2px; }
+.theme-picker-option {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: transparent; border: none; color: var(--parchment); font-size: 14px; text-align: left; padding: 9px 10px; border-radius: 3px;
+}
+.theme-picker-option:hover { background: rgba(198,161,91,0.12); }
+.theme-picker-option .check { color: var(--gold-bright); visibility: hidden; }
+.theme-picker-option.active .check { visibility: visible; }
+
+/* ---------- Écrire ---------- */
+.composer { margin-bottom: 26px; }
+.composer > summary { display: flex; list-style: none; width: fit-content; margin: 0 auto; cursor: pointer; }
+.composer > summary::-webkit-details-marker { display: none; }
+.composer .when-open, .composer[open] .when-closed { display: none; }
+.composer[open] .when-open { display: inline; }
+.composer[open] > summary { margin-bottom: 20px; border-color: transparent; color: var(--ink-soft); min-height: 34px; font-size: 13px; }
+.page-over { font-family: var(--font-text); font-size: 15px; font-weight: 500; font-variant: small-caps; letter-spacing: 0.14em; color: var(--ink-soft); text-align: center; margin-bottom: 18px; }
+.draft-note { font-family: var(--font-text); font-style: italic; font-size: 15px; color: var(--gold-bright); text-align: center; margin: -8px 0 16px; }
+.draft-note button { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- Recherche ---------- */
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 24px; }
+.search-wrap { position: relative; flex: 1 1 240px; min-width: 180px; }
+.search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--gold-bright); }
+.search-wrap input { padding-left: 40px; background: var(--page); }
+.toolbar select { flex: 0 1 200px; min-width: 150px; background-color: var(--page); }
+.list-count { font-family: var(--font-text); font-style: italic; font-size: 15.5px; color: var(--ink-soft); margin-left: auto; }
+
+/* ---------- Articles ---------- */
+.entry { margin-bottom: 44px; font-family: var(--font-text); font-size: 17px; line-height: 1.6; animation: fadein .18s ease; }
+@keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.entry-head { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; margin-bottom: 22px; }
+.entry-over { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; font-size: 15px; font-variant: small-caps; letter-spacing: 0.13em; color: var(--ink-soft); }
+.entry-over span + span::before { content: "·"; margin-right: 8px; color: var(--frame); }
+.entry-over .mark-new { color: var(--gold-bright); font-weight: 600; }
+.entry-over .mark-gm { color: var(--danger); font-weight: 600; }
+.entry-title { color: var(--gold-bright); line-height: 1.08; overflow-wrap: anywhere; }
+.entry-title-xl { font-size: clamp(34px, 6.4vw, 52px); }
+.entry-title-l { font-size: clamp(29px, 5vw, 40px); }
+.entry-title-m { font-size: clamp(25px, 4vw, 32px); }
+.entry-title.untitled { font-family: var(--font-text); font-style: italic; font-weight: 500; font-size: 24px; color: var(--ink-soft); }
+.entry-byline { font-style: italic; font-size: 16.5px; color: var(--ink-soft); }
+.entry-ornament { margin-top: 6px; max-width: 100%; }
+.entry-ornament .orn-line { stroke: var(--frame); }
+.entry-ornament .orn-gem { stroke: var(--gold-bright); }
+.entry-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.entry-body.dropcap::first-letter {
+  float: left; font-family: var(--font-display); font-size: 3.5em; line-height: 0.82; font-weight: 600;
+  padding: 5px 9px 0 0; color: var(--gold-bright);
+}
+.entry-notice { margin-top: 14px; padding: 10px 14px; border: 1px solid var(--danger); border-radius: 3px; color: var(--danger); font-family: var(--font-body); font-size: 14px; line-height: 1.45; }
+.entry-images { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 20px; }
+.entry-images.single { grid-template-columns: minmax(0, 1fr); }
+.thumb { display: block; padding: 0; border: 1px solid var(--frame-soft); border-radius: 3px; background: var(--bg); overflow: hidden; cursor: zoom-in; }
+.thumb img { width: 100%; height: 230px; object-fit: cover; display: block; }
+.entry-images.single .thumb img { height: auto; max-height: 460px; }
+.entry-actions { margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.confirm-bar { margin-top: 20px; display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; font-family: var(--font-body); font-size: 14px; }
+.comment .confirm-bar { margin-top: 6px; }
+.entry.editing .entry-view { display: none; }
+.entry-edit { animation: fadein .16s ease; }
+
+/* ---------- Commentaires ---------- */
+.comments { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--frame-soft); }
+.comments-head { font-family: var(--font-text); font-size: 15px; font-weight: 600; font-variant: small-caps; letter-spacing: 0.12em; color: var(--ink-soft); margin-bottom: 6px; }
+.comment { padding: 10px 0 12px; border-bottom: 1px dotted var(--frame-soft); font-size: 16px; line-height: 1.5; }
+.comment-new { box-shadow: inset 2px 0 0 var(--gold-bright); padding-left: 12px; }
+.comment-meta { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
+.comment-author { font-variant: small-caps; letter-spacing: 0.08em; font-weight: 600; font-size: 15.5px; }
+.comment-date { font-style: italic; font-size: 14.5px; color: var(--ink-soft); }
+.comment-delete { margin-left: auto; min-height: 28px; padding: 0 8px; }
+.comment-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment-form { display: flex; gap: 8px; margin-top: 14px; align-items: flex-end; }
+.comment-form textarea { min-height: 44px; height: 44px; flex: 1; font-size: 15.5px; padding: 9px 12px; }
+.comment-error { margin-top: 6px; }
+
+/* ---------- Images du formulaire ---------- */
+.image-manager-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.image-manager-grid:empty { display: none; }
+.image-chip { position: relative; width: 84px; height: 84px; border-radius: 3px; overflow: hidden; border: 1px solid var(--frame); flex-shrink: 0; }
+.image-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .image-chip-remove {
-  position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%;
-  background:rgba(10,9,14,0.75); color:var(--parchment); border:none; font-size:11px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; padding:0; line-height:1;
+  position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(10,9,14,0.8); color: #ece3ce; border: none; font-size: 11px;
+  display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1;
 }
-.image-manager-add input[type="file"] { padding:6px 8px; font-size:12.5px; }
-.image-manager-url-row { display:flex; gap:6px; margin-top:8px; }
-.image-manager-full { font-size:12px; color: var(--text-faint); margin:0; }
+.image-manager-url-row { display: flex; gap: 8px; margin-top: 8px; }
+.image-manager-url-row input { flex: 1; min-width: 0; }
+.image-manager-url-row .btn { min-height: 44px; }
+.image-manager-note { font-family: var(--font-text); font-style: italic; font-size: 14.5px; color: var(--ink-soft); margin-top: 6px; }
+.image-manager-note.error-text { font-family: var(--font-body); font-style: normal; font-size: 14px; color: var(--danger); }
+
+.lightbox { position: fixed; inset: 0; background: rgba(10,9,14,0.93); display: flex; align-items: center; justify-content: center; z-index: 999; cursor: zoom-out; padding: 24px; border: 0; }
+.lightbox img { max-width: 100%; max-height: 100%; border-radius: 3px; }
+
+@media (max-width: 640px) {
+  .wrap { padding: 22px 12px 48px; }
+  .page { margin: 6px; padding: 22px 16px 24px; outline-offset: 5px; }
+  .entry { font-size: 16.5px; margin-bottom: 34px; }
+  .toolbar select { flex: 1 1 150px; }
+  .list-count { flex: 1 1 100%; text-align: right; }
+  .thumb img { height: 150px; }
+  .comment-form { flex-wrap: wrap; }
+  .comment-form textarea { flex: 1 1 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .entry, .entry-edit { animation: none; } }
 </style>
 </head>
 <body>
 
-<div id="screen-gate" style="max-width:460px;margin:100px auto;padding:0 20px;text-align:center;">
-  <div class="card">
+<div id="screen-gate">
+  <div class="page">
     <p id="gate-message" class="muted">Chargement…</p>
-    <a href="index.html" class="btn btn-sm" style="margin-top:10px;">← Retour à l'accueil</a>
+    <a href="index.html" class="btn btn-sm">← Retour à l'accueil</a>
   </div>
 </div>
 
 <div id="journal-app" class="wrap" style="display:none;">
-  <div class="topline">
-    <h1 id="journal-title">Journal de bord</h1>
-    <a id="back-link" href="index.html" class="btn btn-sm btn-ghost">🗂 Table</a>
-  </div>
-
-  <div class="card">
-    <h2>Nouvel article</h2>
-    <div class="field"><label for="new-title">Titre</label><input id="new-title" type="text" placeholder="Titre de l'article (optionnel)"></div>
-    <div class="field"><label for="new-body">Texte</label><textarea id="new-body" placeholder="Raconte…"></textarea></div>
-    <div class="md-hint">Tu peux utiliser **gras** et *italique*.</div>
-    <div class="session-row">
-      <div class="field"><label for="new-session">Numéro de séance (optionnel)</label><input id="new-session" type="number" min="1" step="1" placeholder="ex. 12"></div>
-      <div class="field"><label for="new-signed-as">Signer en tant que</label><select id="new-signed-as"></select></div>
+  <header id="masthead">
+    <div class="masthead-rule" aria-hidden="true">
+      <span></span>
+      <svg width="34" height="14" viewBox="0 0 34 14" fill="none" stroke-width="1.2"><path d="M17 1 L23 7 L17 13 L11 7 Z"/><path d="M1 7 H9 M25 7 H33"/></svg>
+      <span></span>
     </div>
-    <div class="field">
-      <label>Images (jusqu'à 4 — fichier ou lien)</label>
-      <div id="new-images-slot"></div>
+    <h1>Journal <span>de bord</span></h1>
+    <p class="masthead-sub" id="journal-sub"></p>
+    <div class="masthead-actions">
+      <a id="back-link" href="index.html" class="btn">🗂 Table</a>
+      <div class="theme-picker">
+        <button type="button" class="btn" id="theme-picker-btn" aria-haspopup="true">Thème ▾</button>
+        <div class="theme-picker-panel" id="theme-picker-panel">
+          <button type="button" class="theme-picker-option" data-theme="classique"><span>Classique</span><span class="check">✓</span></button>
+          <button type="button" class="theme-picker-option" data-theme="medievale"><span>Médiévale</span><span class="check">✓</span></button>
+          <button type="button" class="theme-picker-option" data-theme="psychedelique"><span>Psychédélique</span><span class="check">✓</span></button>
+          <button type="button" class="theme-picker-option" data-theme="olympe"><span>Olympe</span><span class="check">✓</span></button>
+          <button type="button" class="theme-picker-option" data-theme="titan"><span>Titan</span><span class="check">✓</span></button>
+          <button type="button" class="theme-picker-option" data-theme="neon-urbain"><span>Néon Urbain</span><span class="check">✓</span></button>
+        </div>
+      </div>
     </div>
-    <div id="new-entry-error" class="error-text"></div>
-    <button type="button" class="btn btn-gold" id="new-entry-btn">Publier</button>
-  </div>
+  </header>
 
-  <h2>Articles</h2>
+  <details id="composer" class="composer">
+    <summary class="btn btn-gold"><span class="when-closed">✒ Écrire un article</span><span class="when-open">✕ Refermer</span></summary>
+    <div class="page">
+      <h2 class="page-over">Nouvel article</h2>
+      <p id="draft-note" class="draft-note" hidden></p>
+      <div id="composer-slot"></div>
+    </div>
+  </details>
+
   <div class="toolbar">
-    <input id="search-input" type="text" placeholder="Rechercher dans les articles…">
-    <select id="session-filter"><option value="">Toutes les séances</option></select>
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" type="search" placeholder="Rechercher dans les articles…" aria-label="Rechercher dans les articles" autocomplete="off">
+    </div>
+    <select id="session-filter" aria-label="Filtrer par séance"><option value="">Toutes les séances</option></select>
+    <span id="list-count" class="list-count"></span>
   </div>
   <div id="entries-list"></div>
 </div>
 
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
+// Version figée de la bibliothèque Supabase (la même que la Fiche : un seul téléchargement pour les deux pages).
+const SUPABASE_LIB_URL = 'https://esm.sh/@supabase/supabase-js@2.119.0';
 const SUPABASE_URL = 'https://nlskjszxwipbgosxvjkq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sc2tqc3p4d2lwYmdvc3h2amtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE0NjEsImV4cCI6MjEwNDM1NzQ2MX0.VFjq8YaaCpVG8OK4DY9lDJw0JkQtBeOoEZhPeCbpz0c';
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MAX_IMAGES = 4;
+const THEME_KEY = 'codexScionTheme'; // réglage partagé avec le Codex
+const ORNAMENT = '<svg class="entry-ornament" aria-hidden="true" width="150" height="14" viewBox="0 0 150 14" fill="none" stroke-width="1.2">' +
+  '<path class="orn-line" d="M0 7 H62 M88 7 H150"/><path class="orn-gem" d="M75 1 L81 7 L75 13 L69 7 Z"/></svg>';
 
+let supabase = null;
 var currentUser = null;
 var currentTable = null;
-var memberNames = {};   // user_id -> pseudo, pour cette table
-var myCharacters = [];  // [{id, name}] — mes personnages sur cette table
-var allEntries = [];    // dernier chargement complet, avant filtrage
-var previousVisitISO = null; // horodatage de la visite précédente, pour les badges "Nouveau"
+var memberNames = {};       // user_id -> pseudo, pour cette table
+var myCharacters = [];      // [{id, name}] — mes personnages sur cette table
+var allEntries = [];        // tous les articles de la table (avec leurs commentaires)
+var previousVisitMs = null; // date de la visite précédente, pour les mentions « Nouveau »
+var cards = new Map();      // id d'article -> sa carte déjà construite (réutilisée d'un filtrage à l'autre)
+var composer = null;        // formulaire « Nouvel article » en cours
+var formSeq = 0;
+
+function $(id) { return document.getElementById(id); }
+function el(tag, cls, text) {
+  var n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+function button(cls, text) { var b = el('button', cls, text); b.type = 'button'; return b; }
 
 var dateFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 function fmtDate(iso) { try { return dateFmt.format(new Date(iso)); } catch (e) { return iso; } }
 function nameOf(userId) { return memberNames[userId] || 'Joueur inconnu'; }
 function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+function isSinceLastVisit(iso) { return previousVisitMs !== null && new Date(iso).getTime() > previousVisitMs; }
+function parseSession(raw) { var n = parseInt(String(raw).trim(), 10); return n >= 1 ? n : null; }
+// Message lisible quand la base ne modifie aucune ligne (droits insuffisants, article déjà supprimé…).
+function dbMessage(error) { return error.code === 'PGRST116' ? 'la base a refusé la modification' : (error.message || 'erreur serveur'); }
 
 // Mise en forme minimale et sûre : échappe d'abord tout le HTML, puis n'autorise
 // que **gras** et *italique*. Les retours à la ligne sont gérés par white-space:pre-wrap.
@@ -162,424 +376,168 @@ function renderRichText(raw) {
   return escaped;
 }
 
-function makeBadge(text, cls) {
-  var b = document.createElement('span');
-  b.className = 'badge ' + cls;
-  b.textContent = text;
-  return b;
-}
-
-function currentPseudoDisplay() { return memberNames[currentUser.id] || 'Joueur'; }
-
-function signatureOptionsHtml(selected) {
-  var html = '<option value=""' + (selected ? '' : ' selected') + '>' + escapeHtml(currentPseudoDisplay()) + ' (pseudo)</option>';
-  myCharacters.forEach(function (c) {
-    html += '<option value="' + escapeHtml(c.name) + '"' + (selected === c.name ? ' selected' : '') + '>' + escapeHtml(c.name) + '</option>';
-  });
-  return html;
-}
-
 function showGate(msg) {
-  document.getElementById('gate-message').textContent = msg;
-  document.getElementById('screen-gate').style.display = '';
-  document.getElementById('journal-app').style.display = 'none';
+  $('gate-message').textContent = msg;
+  $('screen-gate').style.display = '';
+  $('journal-app').style.display = 'none';
+}
+
+/* ============ Thème ============ */
+function applyTheme(theme) {
+  if (theme === 'classique') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-picker-option').forEach(function (b) { b.classList.toggle('active', b.dataset.theme === theme); });
+}
+function wireThemePicker() {
+  var panel = $('theme-picker-panel');
+  applyTheme(document.documentElement.getAttribute('data-theme') || 'classique');
+  $('theme-picker-btn').addEventListener('click', function () { panel.classList.toggle('show'); });
+  document.querySelectorAll('.theme-picker-option').forEach(function (b) {
+    b.addEventListener('click', function () {
+      applyTheme(b.dataset.theme);
+      try { localStorage.setItem(THEME_KEY, b.dataset.theme); } catch (e) {}
+      panel.classList.remove('show');
+    });
+  });
+  document.addEventListener('click', function (e) { if (!e.target.closest('.theme-picker')) panel.classList.remove('show'); });
+}
+
+/* ============ Confirmation sur place (remplace les fenêtres du navigateur) ============
+   « host » est masqué le temps de la question, posée juste après « anchor ».
+   « action » renvoie un message d'erreur à afficher, ou rien si tout s'est bien passé. */
+function askConfirm(host, anchor, message, yesLabel, action) {
+  var bar = el('div', 'confirm-bar');
+  var yes = button('btn btn-sm btn-danger', yesLabel);
+  var no = button('btn btn-sm btn-ghost', 'Annuler');
+  var err = el('span', 'error-text');
+  err.setAttribute('role', 'alert');
+  bar.append(el('span', null, message), yes, no, err);
+  host.hidden = true;
+  anchor.after(bar);
+  no.focus();
+  function close() { bar.remove(); host.hidden = false; }
+  no.addEventListener('click', close);
+  yes.addEventListener('click', async function () {
+    yes.disabled = no.disabled = true;
+    err.textContent = '';
+    var problem;
+    try { problem = await action(); } catch (e) { problem = 'Erreur : ' + e.message; }
+    if (problem) { err.textContent = problem; yes.disabled = no.disabled = false; return; }
+    if (bar.isConnected) close();
+  });
 }
 
 function openLightbox(src) {
-  var overlay = document.createElement('div');
-  overlay.className = 'lightbox';
-  var img = document.createElement('img');
-  img.src = src;
+  var overlay = button('lightbox');
+  overlay.setAttribute('aria-label', "Fermer l'image");
+  var img = el('img');
+  img.src = src; img.alt = '';
   overlay.appendChild(img);
-  function close() { overlay.remove(); document.removeEventListener('keydown', onKey); }
+  var opener = document.activeElement;
+  function close() { overlay.remove(); document.removeEventListener('keydown', onKey); if (opener && opener.focus) opener.focus(); }
   function onKey(e) { if (e.key === 'Escape') close(); }
   overlay.addEventListener('click', close);
   document.addEventListener('keydown', onKey);
   document.body.appendChild(overlay);
+  overlay.focus();
 }
 
 /* ============ Gestionnaire d'images (jusqu'à 4, fichier ou lien URL) ============
-   Un même petit composant sert au formulaire "Nouvel article" et à chaque formulaire
-   d'édition. initialImages est la liste déjà enregistrée (vide pour un nouvel article),
-   sous la forme [{url, source: 'upload'|'link'}, ...]. */
+   initialImages : liste déjà enregistrée, sous la forme [{url, source: 'upload'|'link'}, ...]. */
 function createImageManager(initialImages) {
-  var items = (initialImages || []).map(function (im) {
-    return { kind: 'existing', url: im.url, source: im.source };
-  });
-
-  var container = document.createElement('div');
-  var grid = document.createElement('div');
-  grid.className = 'image-manager-grid';
-  var addRow = document.createElement('div');
-  addRow.className = 'image-manager-add';
-  container.appendChild(grid);
-  container.appendChild(addRow);
+  var items = (initialImages || []).map(function (im) { return { kind: 'existing', url: im.url, source: im.source }; });
+  var container = el('div');
+  var grid = el('div', 'image-manager-grid');
+  var addRow = el('div', 'image-manager-add');
+  container.append(grid, addRow);
 
   function render() {
-    grid.innerHTML = '';
+    grid.textContent = '';
     items.forEach(function (item, idx) {
-      var chip = document.createElement('div');
-      chip.className = 'image-chip';
-      var img = document.createElement('img');
+      var chip = el('div', 'image-chip');
+      var img = el('img');
       img.src = item.kind === 'file' ? item.previewUrl : item.url;
       img.alt = '';
-      chip.appendChild(img);
-      var rm = document.createElement('button');
-      rm.type = 'button'; rm.className = 'image-chip-remove'; rm.textContent = '✕';
+      var rm = button('image-chip-remove', '✕');
       rm.title = 'Retirer cette image';
+      rm.setAttribute('aria-label', 'Retirer cette image');
       rm.addEventListener('click', function () {
         if (item.kind === 'file' && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
         items.splice(idx, 1);
         render();
       });
-      chip.appendChild(rm);
+      chip.append(img, rm);
       grid.appendChild(chip);
     });
     renderAddRow();
   }
 
   function renderAddRow() {
-    addRow.innerHTML = '';
+    addRow.textContent = '';
     if (items.length >= MAX_IMAGES) {
-      var full = document.createElement('p');
-      full.className = 'image-manager-full';
-      full.textContent = 'Maximum de ' + MAX_IMAGES + ' images atteint.';
-      addRow.appendChild(full);
+      addRow.appendChild(el('p', 'image-manager-note', 'Maximum de ' + MAX_IMAGES + ' images atteint.'));
       return;
     }
-    var fileInput = document.createElement('input');
+    var fileInput = el('input');
     fileInput.type = 'file'; fileInput.accept = 'image/*';
+    fileInput.setAttribute('aria-label', 'Ajouter une image depuis un fichier');
     fileInput.addEventListener('change', function () {
       var f = fileInput.files[0];
       if (!f) return;
       items.push({ kind: 'file', file: f, previewUrl: URL.createObjectURL(f) });
-      fileInput.value = '';
       render();
     });
-    addRow.appendChild(fileInput);
 
-    var urlRow = document.createElement('div');
-    urlRow.className = 'image-manager-url-row';
-    var urlInput = document.createElement('input');
+    var urlRow = el('div', 'image-manager-url-row');
+    var urlInput = el('input');
     urlInput.type = 'text'; urlInput.placeholder = 'ou colle un lien URL vers une image…';
-    var urlBtn = document.createElement('button');
-    urlBtn.type = 'button'; urlBtn.className = 'btn btn-sm'; urlBtn.textContent = 'Ajouter';
+    urlInput.setAttribute('aria-label', "Lien vers une image");
+    var urlBtn = button('btn btn-sm', 'Ajouter');
+    var note = el('p', 'image-manager-note error-text');
     function addLink() {
       var v = urlInput.value.trim();
       if (!v) return;
-      if (!/^https?:\/\//i.test(v)) { alert('Le lien doit commencer par http:// ou https://'); return; }
+      if (!/^https?:\/\//i.test(v)) { note.textContent = 'Le lien doit commencer par http:// ou https://'; return; }
       items.push({ kind: 'link', url: v });
-      urlInput.value = '';
       render();
     }
     urlBtn.addEventListener('click', addLink);
     urlInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addLink(); } });
-    urlRow.appendChild(urlInput);
-    urlRow.appendChild(urlBtn);
-    addRow.appendChild(urlRow);
+    urlInput.addEventListener('input', function () { note.textContent = ''; });
+    urlRow.append(urlInput, urlBtn);
+    addRow.append(fileInput, urlRow, note);
   }
 
   render();
-
-  return { el: container, getItems: function () { return items; } };
+  return {
+    el: container,
+    getItems: function () { return items; },
+    dispose: function () { items.forEach(function (it) { if (it.kind === 'file' && it.previewUrl) URL.revokeObjectURL(it.previewUrl); }); }
+  };
 }
 
-// Transforme les items d'un gestionnaire d'images en tableau final prêt pour la colonne
-// "images" (upload effectif des fichiers en attente ; les liens et images déjà
-// enregistrées passent tels quels).
+// Envoie les fichiers en attente et renvoie la liste finale pour la colonne « images ».
+// Une image qui échoue n'empêche pas d'enregistrer le reste : elle est signalée dans « failures ».
 async function resolveImageManager(manager, entryId) {
   var items = manager.getItems();
-  var finalImages = [];
+  var images = [], uploadedNow = [], failures = [];
   for (var i = 0; i < items.length; i++) {
     var it = items[i];
-    if (it.kind === 'existing') {
-      finalImages.push({ url: it.url, source: it.source });
-    } else if (it.kind === 'link') {
-      finalImages.push({ url: it.url, source: 'link' });
-    } else if (it.kind === 'file') {
-      var uploadedUrl = await uploadEntryImage(entryId, it.file);
-      if (uploadedUrl) finalImages.push({ url: uploadedUrl, source: 'upload' });
+    if (it.kind === 'existing') images.push({ url: it.url, source: it.source });
+    else if (it.kind === 'link') images.push({ url: it.url, source: 'link' });
+    else {
+      var up = await uploadEntryImage(entryId, it.file);
+      if (up.url) { images.push({ url: up.url, source: 'upload' }); uploadedNow.push(up.url); }
+      else failures.push('« ' + it.file.name + ' » : ' + up.error);
     }
   }
-  return finalImages;
+  return { images: images, uploadedNow: uploadedNow, failures: failures };
 }
 
-// Les images "upload" présentes avant modification mais absentes du résultat final
-// doivent être effacées du stockage (best-effort, ne bloque jamais la sauvegarde).
+// Images envoyées qui étaient là avant la modification et n'y sont plus : à effacer du stockage.
 function removedUploadedImages(initialImages, finalImages) {
   var keptUrls = finalImages.map(function (im) { return im.url; });
-  return (initialImages || []).filter(function (im) {
-    return im.source === 'upload' && keptUrls.indexOf(im.url) === -1;
-  });
-}
-
-var newImageManager = createImageManager([]);
-document.getElementById('new-images-slot').appendChild(newImageManager.el);
-
-async function init() {
-  var params = new URLSearchParams(window.location.search);
-  var code = params.get('table');
-  if (!code) { showGate('Aucune table indiquée. Reviens à l\'accueil.'); return; }
-
-  var sessionRes = await supabase.auth.getSession();
-  var session = sessionRes.data && sessionRes.data.session;
-  if (!session) { showGate('Tu dois être connecté pour accéder au journal.'); return; }
-  currentUser = session.user;
-
-  var tableRes = await supabase.from('tables').select('*').eq('code', code).maybeSingle();
-  if (tableRes.error || !tableRes.data) { showGate('Cette table est introuvable.'); return; }
-  currentTable = tableRes.data;
-
-  var memberRes = await supabase.from('table_members').select('user_id, display_name').eq('table_id', currentTable.id);
-  if (memberRes.error) { showGate('Erreur : ' + memberRes.error.message); return; }
-  var mine = false;
-  (memberRes.data || []).forEach(function (m) {
-    memberNames[m.user_id] = m.display_name;
-    if (m.user_id === currentUser.id) mine = true;
-  });
-  if (!mine) { showGate("Tu n'es pas membre de cette table."); return; }
-
-  var charRes = await supabase.from('characters').select('id, name').eq('table_id', currentTable.id).eq('owner_id', currentUser.id).order('created_at');
-  myCharacters = charRes.data || [];
-  document.getElementById('new-signed-as').innerHTML = signatureOptionsHtml(null);
-
-  var visitKey = 'scionJournal:lastVisit:' + currentTable.id;
-  try { previousVisitISO = localStorage.getItem(visitKey); } catch (e) { previousVisitISO = null; }
-
-  document.getElementById('journal-title').textContent = 'Journal de bord — ' + currentTable.name;
-  document.getElementById('back-link').href = 'index.html?table=' + encodeURIComponent(currentTable.code);
-  document.getElementById('screen-gate').style.display = 'none';
-  document.getElementById('journal-app').style.display = '';
-
-  await loadEntries();
-  try { localStorage.setItem(visitKey, new Date().toISOString()); } catch (e) {}
-}
-
-async function loadEntries() {
-  var el = document.getElementById('entries-list');
-  el.innerHTML = '<p class="muted">Chargement…</p>';
-  var res = await supabase
-    .from('journal_entries')
-    .select('*, journal_comments(*)')
-    .eq('table_id', currentTable.id)
-    .order('created_at', { ascending: false })
-    .order('created_at', { foreignTable: 'journal_comments', ascending: true });
-  if (res.error) { el.innerHTML = '<p class="error-text">Erreur : ' + escapeHtml(res.error.message) + '</p>'; return; }
-  allEntries = res.data || [];
-  populateSessionFilter();
-  applyFilters();
-}
-
-function populateSessionFilter() {
-  var sel = document.getElementById('session-filter');
-  var current = sel.value;
-  var sessions = Array.from(new Set(
-    allEntries.map(function (e) { return e.session_number; }).filter(function (v) { return v !== null && v !== undefined; })
-  ));
-  sessions.sort(function (a, b) { return b - a; });
-  sel.innerHTML = '<option value="">Toutes les séances</option>' +
-    sessions.map(function (s) { return '<option value="' + s + '">Séance ' + s + '</option>'; }).join('');
-  if (sessions.indexOf(Number(current)) !== -1) sel.value = current;
-}
-
-function getFilteredEntries() {
-  var q = document.getElementById('search-input').value.trim().toLowerCase();
-  var sessionFilter = document.getElementById('session-filter').value;
-  return allEntries.filter(function (e) {
-    if (sessionFilter !== '' && String(e.session_number || '') !== sessionFilter) return false;
-    if (!q) return true;
-    var hay = ((e.title || '') + ' ' + e.body + ' ' + (e.signed_as || '')).toLowerCase();
-    return hay.indexOf(q) !== -1;
-  });
-}
-
-function applyFilters() { renderEntries(getFilteredEntries()); }
-document.getElementById('search-input').addEventListener('input', applyFilters);
-document.getElementById('session-filter').addEventListener('change', applyFilters);
-
-function renderEntries(entries) {
-  var el = document.getElementById('entries-list');
-  if (!entries.length) {
-    el.innerHTML = '<p class="muted">' + (allEntries.length ? 'Aucun article ne correspond à ce filtre.' : "Aucun article pour le moment — sois le premier à écrire quelque chose.") + '</p>';
-    return;
-  }
-  el.innerHTML = '';
-  entries.forEach(function (entry) { el.appendChild(renderEntryCard(entry)); });
-}
-
-function renderEntryCard(entry) {
-  var mine = entry.author_id === currentUser.id;
-  var isGm = currentTable.created_by === entry.author_id;
-  var isNewEntry = !mine && previousVisitISO && entry.created_at > previousVisitISO;
-  var newCommentsCount = (entry.journal_comments || []).filter(function (c) {
-    return c.author_id !== currentUser.id && previousVisitISO && c.created_at > previousVisitISO;
-  }).length;
-
-  var card = document.createElement('div');
-  card.className = 'card';
-
-  var badges = document.createElement('div');
-  badges.className = 'entry-header-badges';
-  if (isNewEntry) badges.appendChild(makeBadge('Nouveau', 'badge-new'));
-  if (isGm) badges.appendChild(makeBadge('MJ', 'badge-gm'));
-  if (entry.session_number != null) badges.appendChild(makeBadge('Séance ' + entry.session_number, 'badge-session'));
-  if (newCommentsCount > 0) badges.appendChild(makeBadge(newCommentsCount + (newCommentsCount > 1 ? ' nouveaux commentaires' : ' nouveau commentaire'), 'badge-new'));
-  if (badges.childNodes.length) card.appendChild(badges);
-
-  var meta = document.createElement('div');
-  meta.className = 'entry-meta';
-  var signature = entry.signed_as ? entry.signed_as + ' (' + nameOf(entry.author_id) + ')' : nameOf(entry.author_id);
-  meta.textContent = signature + ' · ' + fmtDate(entry.created_at) + (entry.updated_at && entry.updated_at !== entry.created_at ? ' (modifié)' : '');
-  card.appendChild(meta);
-
-  var titleEl = document.createElement('h3');
-  titleEl.textContent = entry.title || '(Sans titre)';
-  card.appendChild(titleEl);
-
-  var bodyEl = document.createElement('div');
-  bodyEl.className = 'entry-body';
-  bodyEl.innerHTML = renderRichText(entry.body);
-  card.appendChild(bodyEl);
-
-  var images = entry.images || [];
-  if (images.length) {
-    var imagesWrap = document.createElement('div');
-    imagesWrap.className = 'entry-images';
-    images.forEach(function (im) {
-      var img = document.createElement('img');
-      img.src = im.url;
-      img.alt = '';
-      img.addEventListener('click', function () { openLightbox(im.url); });
-      imagesWrap.appendChild(img);
-    });
-    card.appendChild(imagesWrap);
-  }
-
-  if (mine) {
-    var actions = document.createElement('div');
-    actions.className = 'entry-actions';
-
-    var editBtn = document.createElement('button');
-    editBtn.type = 'button'; editBtn.className = 'btn btn-sm'; editBtn.textContent = 'Modifier';
-    editBtn.addEventListener('click', function () { openEditForm(card, entry); });
-    actions.appendChild(editBtn);
-
-    var delBtn = document.createElement('button');
-    delBtn.type = 'button'; delBtn.className = 'btn btn-sm btn-ghost'; delBtn.textContent = '🗑 Supprimer';
-    delBtn.addEventListener('click', async function () {
-      if (!confirm('Supprimer définitivement cet article et ses commentaires ?')) return;
-      var delRes = await supabase.from('journal_entries').delete().eq('id', entry.id);
-      if (delRes.error) { alert('Erreur : ' + delRes.error.message); return; }
-      images.filter(function (im) { return im.source === 'upload'; }).forEach(function (im) { removeStoredImage(im.url); });
-      loadEntries();
-    });
-    actions.appendChild(delBtn);
-
-    card.appendChild(actions);
-  }
-
-  card.appendChild(renderComments(entry));
-  return card;
-}
-
-function openEditForm(card, entry) {
-  var wrap = document.createElement('div');
-  wrap.style.marginTop = '10px';
-  wrap.innerHTML =
-    '<div class="field"><label>Titre</label><input type="text" class="edit-title" value="' + escapeHtml(entry.title || '') + '"></div>' +
-    '<div class="field"><label>Texte</label><textarea class="edit-body">' + escapeHtml(entry.body) + '</textarea></div>' +
-    '<div class="md-hint">Tu peux utiliser **gras** et *italique*.</div>' +
-    '<div class="session-row">' +
-      '<div class="field"><label>Numéro de séance (optionnel)</label><input type="number" min="1" step="1" class="edit-session" value="' + (entry.session_number != null ? entry.session_number : '') + '"></div>' +
-      '<div class="field"><label>Signer en tant que</label><select class="edit-signed-as">' + signatureOptionsHtml(entry.signed_as || null) + '</select></div>' +
-    '</div>' +
-    '<div class="field"><label>Images (jusqu\'à ' + MAX_IMAGES + ' — fichier ou lien)</label><div class="edit-images-slot"></div></div>' +
-    '<div class="error-text edit-error"></div>' +
-    '<button type="button" class="btn btn-gold btn-sm edit-save">Enregistrer</button> ' +
-    '<button type="button" class="btn btn-sm btn-ghost edit-cancel">Annuler</button>';
-  card.appendChild(wrap);
-
-  var initialImages = entry.images || [];
-  var editImageManager = createImageManager(initialImages);
-  wrap.querySelector('.edit-images-slot').appendChild(editImageManager.el);
-
-  wrap.querySelector('.edit-cancel').addEventListener('click', function () { loadEntries(); });
-  wrap.querySelector('.edit-save').addEventListener('click', async function () {
-    var errEl = wrap.querySelector('.edit-error');
-    errEl.textContent = '';
-    var title = wrap.querySelector('.edit-title').value.trim();
-    var body = wrap.querySelector('.edit-body').value.trim();
-    if (!body) { errEl.textContent = 'Le texte ne peut pas être vide.'; return; }
-    var sessionRaw = wrap.querySelector('.edit-session').value.trim();
-    var sessionNumber = sessionRaw === '' ? null : parseInt(sessionRaw, 10);
-    var signedAs = wrap.querySelector('.edit-signed-as').value || null;
-    var saveBtn = wrap.querySelector('.edit-save');
-    saveBtn.disabled = true;
-    try {
-      var finalImages = await resolveImageManager(editImageManager, entry.id);
-      var upd = await supabase.from('journal_entries').update({
-        title: title, body: body, session_number: sessionNumber, signed_as: signedAs,
-        images: finalImages, updated_at: new Date().toISOString()
-      }).eq('id', entry.id);
-      if (upd.error) { errEl.textContent = upd.error.message; saveBtn.disabled = false; return; }
-      removedUploadedImages(initialImages, finalImages).forEach(function (im) { removeStoredImage(im.url); });
-      loadEntries();
-    } catch (e) { errEl.textContent = 'Erreur : ' + e.message; saveBtn.disabled = false; }
-  });
-}
-
-function renderComments(entry) {
-  var wrap = document.createElement('div');
-  wrap.className = 'comments';
-
-  (entry.journal_comments || []).forEach(function (c) {
-    var isNew = c.author_id !== currentUser.id && previousVisitISO && c.created_at > previousVisitISO;
-    var cEl = document.createElement('div');
-    cEl.className = 'comment' + (isNew ? ' comment-new' : '');
-
-    var cMeta = document.createElement('div');
-    cMeta.className = 'comment-meta';
-    cMeta.textContent = nameOf(c.author_id) + ' · ' + fmtDate(c.created_at);
-    cEl.appendChild(cMeta);
-
-    var cBody = document.createElement('div');
-    cBody.innerHTML = renderRichText(c.body);
-    cEl.appendChild(cBody);
-
-    if (c.author_id === currentUser.id) {
-      var delBtn = document.createElement('button');
-      delBtn.type = 'button'; delBtn.className = 'btn btn-sm btn-ghost'; delBtn.style.marginTop = '4px';
-      delBtn.textContent = '🗑';
-      delBtn.title = 'Supprimer ce commentaire';
-      delBtn.addEventListener('click', async function () {
-        if (!confirm('Supprimer ce commentaire ?')) return;
-        var res = await supabase.from('journal_comments').delete().eq('id', c.id);
-        if (res.error) { alert('Erreur : ' + res.error.message); return; }
-        loadEntries();
-      });
-      cEl.appendChild(delBtn);
-    }
-
-    wrap.appendChild(cEl);
-  });
-
-  var form = document.createElement('div');
-  form.className = 'comment-form';
-  form.innerHTML = '<textarea placeholder="Ajouter un commentaire…"></textarea><button type="button" class="btn btn-sm">Envoyer</button>';
-  var ta = form.querySelector('textarea');
-  var btn = form.querySelector('button');
-  btn.addEventListener('click', async function () {
-    var text = ta.value.trim();
-    if (!text) return;
-    btn.disabled = true;
-    var res = await supabase.from('journal_comments').insert({ entry_id: entry.id, author_id: currentUser.id, body: text });
-    btn.disabled = false;
-    if (res.error) { alert('Erreur : ' + res.error.message); return; }
-    loadEntries();
-  });
-  wrap.appendChild(form);
-
-  return wrap;
+  return (initialImages || []).filter(function (im) { return im.source === 'upload' && keptUrls.indexOf(im.url) === -1; });
 }
 
 // Redimensionne côté navigateur (bord le plus long à 1600px, ré-encodée en JPEG qualité 0.82)
@@ -610,60 +568,516 @@ function compressImage(file, maxDim, quality) {
 }
 
 async function uploadEntryImage(entryId, file) {
-  var blob = await compressImage(file);
-  var path = currentTable.id + '/' + entryId + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
-  var up = await supabase.storage.from('journal-images').upload(path, blob, { contentType: 'image/jpeg' });
-  if (up.error) { alert("Une image n'a pas pu être envoyée : " + up.error.message); return null; }
-  var pub = supabase.storage.from('journal-images').getPublicUrl(path);
-  return pub.data && pub.data.publicUrl;
+  try {
+    var blob = await compressImage(file);
+    var path = currentTable.id + '/' + entryId + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
+    var up = await supabase.storage.from('journal-images').upload(path, blob, { contentType: 'image/jpeg' });
+    if (up.error) return { error: up.error.message };
+    var pub = supabase.storage.from('journal-images').getPublicUrl(path);
+    var url = pub.data && pub.data.publicUrl;
+    return url ? { url: url } : { error: "adresse de l'image introuvable" };
+  } catch (e) { return { error: e.message }; }
 }
 
-// Best-effort : retire une image du stockage lors d'un remplacement ou d'une suppression.
-// N'agit que sur les images de source 'upload' — les liens externes n'ont rien à effacer ici.
+// Au mieux : retire une image du stockage lors d'un remplacement ou d'une suppression.
+// N'agit que sur les images envoyées — les liens externes n'ont rien à effacer ici.
 async function removeStoredImage(url) {
   try {
     var marker = '/journal-images/';
     var idx = url.indexOf(marker);
     if (idx === -1) return;
-    var path = url.substring(idx + marker.length);
-    await supabase.storage.from('journal-images').remove([path]);
+    await supabase.storage.from('journal-images').remove([url.substring(idx + marker.length)]);
   } catch (e) {}
 }
 
-document.getElementById('new-entry-btn').addEventListener('click', async function () {
-  var errEl = document.getElementById('new-entry-error');
-  errEl.textContent = '';
-  var title = document.getElementById('new-title').value.trim();
-  var body = document.getElementById('new-body').value.trim();
-  var sessionRaw = document.getElementById('new-session').value.trim();
-  var sessionNumber = sessionRaw === '' ? null : parseInt(sessionRaw, 10);
-  var signedAs = document.getElementById('new-signed-as').value || null;
-  if (!body) { errEl.textContent = 'Écris quelque chose avant de publier.'; return; }
-  var btn = document.getElementById('new-entry-btn');
-  btn.disabled = true;
-  try {
-    var res = await supabase.from('journal_entries').insert({
-      table_id: currentTable.id, author_id: currentUser.id, title: title, body: body,
-      session_number: sessionNumber, signed_as: signedAs
-    }).select().single();
-    if (res.error) { errEl.textContent = res.error.message; btn.disabled = false; return; }
+/* ============ Formulaire d'article (le même pour « Nouvel article » et « Modifier ») ============ */
+function fillSignatureOptions(select, selected) {
+  select.textContent = '';
+  var pseudo = el('option', null, (memberNames[currentUser.id] || 'Joueur') + ' (pseudo)');
+  pseudo.value = '';
+  select.appendChild(pseudo);
+  var names = myCharacters.map(function (c) { return c.name; });
+  // Signature d'un personnage renommé ou supprimé depuis : on la garde proposée, pour ne pas la perdre en modifiant l'article.
+  if (selected && names.indexOf(selected) === -1) names.push(selected);
+  names.forEach(function (name) {
+    var o = el('option', null, name);
+    o.value = name;
+    select.appendChild(o);
+  });
+  select.value = selected || '';
+}
 
-    var finalImages = await resolveImageManager(newImageManager, res.data.id);
-    if (finalImages.length) {
-      await supabase.from('journal_entries').update({ images: finalImages }).eq('id', res.data.id);
+function buildEntryForm(opts) {
+  var entry = opts.entry || null;
+  var n = ++formSeq;
+  var form = el('div', 'entry-form');
+  function field(labelText, control, key) {
+    var f = el('div', 'field');
+    var l = el('label', null, labelText);
+    control.id = 'f' + n + '-' + key;
+    l.htmlFor = control.id;
+    f.append(l, control);
+    return f;
+  }
+  var title = el('input'); title.type = 'text'; title.placeholder = "Titre de l'article (optionnel)";
+  var body = el('textarea'); body.placeholder = 'Raconte…';
+  var session = el('input'); session.type = 'number'; session.min = '1'; session.step = '1'; session.placeholder = 'ex. 12';
+  var signed = el('select');
+  fillSignatureOptions(signed, entry ? entry.signed_as : null);
+  if (entry) {
+    title.value = entry.title || '';
+    body.value = entry.body || '';
+    session.value = entry.session_number != null ? entry.session_number : '';
+  }
+  var row = el('div', 'session-row');
+  row.append(field('Numéro de séance (optionnel)', session, 'session'), field('Signer en tant que', signed, 'signed'));
+  var initialImages = entry ? (entry.images || []) : [];
+  var manager = createImageManager(initialImages);
+  var imgField = el('div', 'field');
+  imgField.append(el('div', 'field-label', "Images (jusqu'à " + MAX_IMAGES + ' — fichier ou lien)'), manager.el);
+  var error = el('div', 'error-text');
+  error.setAttribute('role', 'alert');
+  var actions = el('div', 'form-actions');
+  var submit = button('btn btn-gold', opts.submitLabel);
+  actions.appendChild(submit);
+  if (opts.onCancel) {
+    var cancel = button('btn btn-ghost', 'Annuler');
+    cancel.addEventListener('click', function () { manager.dispose(); opts.onCancel(); });
+    actions.appendChild(cancel);
+  }
+  form.append(field('Titre', title, 'title'), field('Texte', body, 'body'), el('p', 'md-hint', 'Tu peux utiliser **gras** et *italique*.'), row, imgField, error, actions);
+
+  submit.addEventListener('click', async function () {
+    error.textContent = '';
+    var bodyV = body.value.trim();
+    if (!bodyV) { error.textContent = entry ? 'Le texte ne peut pas être vide.' : 'Écris quelque chose avant de publier.'; return; }
+    var values = { title: title.value.trim(), body: bodyV, session_number: parseSession(session.value), signed_as: signed.value || null };
+    submit.disabled = true;
+    try {
+      var saved, up;
+      if (entry) {
+        up = await resolveImageManager(manager, entry.id);
+        var upd = await supabase.from('journal_entries')
+          .update(Object.assign({}, values, { images: up.images, updated_at: new Date().toISOString() }))
+          .eq('id', entry.id).select().single();
+        if (upd.error) {
+          up.uploadedNow.forEach(removeStoredImage); // rien n'a été enregistré : on ne laisse pas d'images orphelines
+          throw new Error(dbMessage(upd.error));
+        }
+        removedUploadedImages(initialImages, up.images).forEach(function (im) { removeStoredImage(im.url); });
+        saved = upd.data;
+      } else {
+        var ins = await supabase.from('journal_entries')
+          .insert(Object.assign({ table_id: currentTable.id, author_id: currentUser.id }, values)).select().single();
+        if (ins.error) throw new Error(ins.error.message);
+        saved = ins.data;
+        up = await resolveImageManager(manager, saved.id);
+        if (up.images.length) {
+          var withImages = await supabase.from('journal_entries').update({ images: up.images }).eq('id', saved.id).select().single();
+          if (withImages.error) {
+            up.uploadedNow.forEach(removeStoredImage);
+            up.failures = ["les images n'ont pas pu être rattachées à l'article (" + dbMessage(withImages.error) + ')'];
+          } else saved = withImages.data;
+        }
+      }
+      manager.dispose();
+      opts.onSaved(saved, up.failures);
+    } catch (e) {
+      error.textContent = 'Erreur : ' + e.message;
+      submit.disabled = false;
     }
+  });
 
-    document.getElementById('new-title').value = '';
-    document.getElementById('new-body').value = '';
-    document.getElementById('new-session').value = '';
-    document.getElementById('new-images-slot').innerHTML = '';
-    newImageManager = createImageManager([]);
-    document.getElementById('new-images-slot').appendChild(newImageManager.el);
+  return { el: form, title: title, body: body, session: session, signed: signed };
+}
 
-    loadEntries();
-  } catch (e) { errEl.textContent = 'Erreur : ' + e.message; }
-  btn.disabled = false;
-});
+/* ============ Nouvel article + brouillon ============
+   Ce qui est tapé dans « Nouvel article » est gardé dans ce navigateur tant que ce n'est pas publié :
+   une fermeture d'onglet ou un rechargement ne fait plus perdre le texte. */
+function draftKey() { return 'scionJournal:draft:' + currentTable.id; }
+function readDraft() { try { return JSON.parse(localStorage.getItem(draftKey()) || 'null'); } catch (e) { return null; } }
+function clearDraft() { clearTimeout(draftTimer); try { localStorage.removeItem(draftKey()); } catch (e) {} $('draft-note').hidden = true; }
+
+function mountComposer() {
+  composer = buildEntryForm({
+    submitLabel: 'Publier',
+    onSaved: function (saved, failures) {
+      saved.journal_comments = [];
+      if (failures.length) saved._notice = noticeText(failures);
+      allEntries.unshift(saved);
+      clearDraft();
+      mountComposer();
+      $('composer').open = false;
+      refreshList();
+    }
+  });
+  var slot = $('composer-slot');
+  slot.textContent = '';
+  slot.appendChild(composer.el);
+
+  [composer.title, composer.body, composer.session, composer.signed].forEach(function (c) {
+    c.addEventListener('input', function () { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 400); });
+  });
+}
+
+var draftTimer = null;
+function saveDraft() {
+  if (!composer) return;
+  var d = { title: composer.title.value, body: composer.body.value, session: composer.session.value, signed: composer.signed.value, t: new Date().toISOString() };
+  try {
+    if (d.title.trim() || d.body.trim()) localStorage.setItem(draftKey(), JSON.stringify(d));
+    else localStorage.removeItem(draftKey());
+  } catch (e) {}
+}
+
+function restoreDraft() {
+  var d = readDraft();
+  if (!d || !(d.title || d.body)) return;
+  composer.title.value = d.title || '';
+  composer.body.value = d.body || '';
+  composer.session.value = d.session || '';
+  if (d.signed && Array.prototype.some.call(composer.signed.options, function (o) { return o.value === d.signed; })) composer.signed.value = d.signed;
+  var note = $('draft-note');
+  note.textContent = 'Brouillon retrouvé' + (d.t ? ' du ' + fmtDate(d.t) : '') + ' — ';
+  var drop = button(null, "l'effacer");
+  drop.addEventListener('click', function () { clearDraft(); mountComposer(); });
+  note.appendChild(drop);
+  note.hidden = false;
+  $('composer').open = true;
+}
+
+function noticeText(failures) {
+  return (failures.length > 1 ? 'Des images n\'ont pas pu être enregistrées' : 'Une image n\'a pas pu être enregistrée') +
+    ' — ' + failures.join(' ; ') + '. Tu peux réessayer avec « Modifier ».';
+}
+
+/* ============ Chargement ============ */
+function fetchEntries() {
+  return supabase
+    .from('journal_entries')
+    .select('*, journal_comments(*)')
+    .eq('table_id', currentTable.id)
+    .order('created_at', { ascending: false })
+    .order('created_at', { foreignTable: 'journal_comments', ascending: true });
+}
+
+function showEntries(res) {
+  var list = $('entries-list');
+  if (res.error) {
+    list.textContent = '';
+    var p = el('p', 'muted error-text', 'Les articles n\'ont pas pu être chargés (' + res.error.message + '). ');
+    var retry = button('btn btn-sm', 'Réessayer');
+    retry.addEventListener('click', async function () {
+      retry.disabled = true;
+      var again;
+      try { again = await fetchEntries(); } catch (e) { again = { error: { message: e.message } }; }
+      showEntries(again);
+    });
+    p.appendChild(retry);
+    list.appendChild(p);
+    $('list-count').textContent = '';
+    return;
+  }
+  allEntries = res.data || [];
+  cards.clear();
+  refreshList();
+}
+
+async function init() {
+  wireThemePicker();
+  var code = new URLSearchParams(window.location.search).get('table');
+  if (!code) { showGate('Aucune table indiquée. Reviens à l\'accueil.'); return; }
+
+  try {
+    var lib = await import(SUPABASE_LIB_URL);
+    supabase = lib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (e) {
+    showGate('Impossible de charger la connexion à la plateforme. Vérifie ta connexion internet, puis recharge la page.');
+    return;
+  }
+
+  var memberRes, charRes, entriesRes;
+  try {
+    var sessionRes = await supabase.auth.getSession();
+    var session = sessionRes.data && sessionRes.data.session;
+    if (!session) { showGate('Tu dois être connecté pour accéder au journal.'); return; }
+    currentUser = session.user;
+
+    var tableRes = await supabase.from('tables').select('*').eq('code', code).maybeSingle();
+    if (tableRes.error || !tableRes.data) { showGate('Cette table est introuvable.'); return; }
+    currentTable = tableRes.data;
+
+    // Les trois lectures suivantes ne dépendent que de la table : elles partent en même temps.
+    var results = await Promise.all([
+      supabase.from('table_members').select('user_id, display_name').eq('table_id', currentTable.id),
+      supabase.from('characters').select('id, name').eq('table_id', currentTable.id).eq('owner_id', currentUser.id).order('created_at'),
+      fetchEntries()
+    ]);
+    memberRes = results[0]; charRes = results[1]; entriesRes = results[2];
+  } catch (e) {
+    showGate('La plateforme ne répond pas pour le moment. Vérifie ta connexion internet, puis recharge la page.');
+    return;
+  }
+
+  if (memberRes.error) { showGate('Erreur : ' + memberRes.error.message); return; }
+  var mine = false;
+  (memberRes.data || []).forEach(function (m) {
+    memberNames[m.user_id] = m.display_name;
+    if (m.user_id === currentUser.id) mine = true;
+  });
+  if (!mine) { showGate("Tu n'es pas membre de cette table."); return; }
+  myCharacters = charRes.data || [];
+
+  var visitKey = 'scionJournal:lastVisit:' + currentTable.id;
+  try {
+    var prev = localStorage.getItem(visitKey);
+    var prevMs = prev ? new Date(prev).getTime() : NaN;
+    previousVisitMs = isNaN(prevMs) ? null : prevMs;
+  } catch (e) { previousVisitMs = null; }
+
+  document.title = 'Journal de bord — ' + currentTable.name;
+  $('journal-sub').textContent = currentTable.name;
+  $('back-link').href = 'index.html?table=' + encodeURIComponent(currentTable.code);
+  $('screen-gate').style.display = 'none';
+  $('journal-app').style.display = '';
+
+  mountComposer();
+  restoreDraft();
+  window.addEventListener('pagehide', saveDraft);
+  $('search-input').addEventListener('input', applyFilters);
+  $('session-filter').addEventListener('change', applyFilters);
+  showEntries(entriesRes);
+  if (!entriesRes.error) { try { localStorage.setItem(visitKey, new Date().toISOString()); } catch (e) {} }
+}
+
+/* ============ Liste et filtres ============ */
+function refreshList() { populateSessionFilter(); applyFilters(); }
+
+function populateSessionFilter() {
+  var sel = $('session-filter');
+  var current = sel.value;
+  var sessions = Array.from(new Set(
+    allEntries.map(function (e) { return e.session_number; }).filter(function (v) { return v !== null && v !== undefined; })
+  ));
+  sessions.sort(function (a, b) { return b - a; });
+  sel.textContent = '';
+  var all = el('option', null, 'Toutes les séances'); all.value = '';
+  sel.appendChild(all);
+  sessions.forEach(function (s) { var o = el('option', null, 'Séance ' + s); o.value = String(s); sel.appendChild(o); });
+  if (sessions.indexOf(Number(current)) !== -1) sel.value = current;
+}
+
+function getFilteredEntries() {
+  var q = $('search-input').value.trim().toLowerCase();
+  var sessionFilter = $('session-filter').value;
+  return allEntries.filter(function (e) {
+    if (sessionFilter !== '' && String(e.session_number || '') !== sessionFilter) return false;
+    if (!q) return true;
+    var hay = ((e.title || '') + ' ' + e.body + ' ' + (e.signed_as || '')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+}
+
+// Les cartes déjà construites sont réutilisées telles quelles : filtrer ou chercher ne fait perdre
+// ni un commentaire en cours de frappe, ni un formulaire de modification ouvert.
+function applyFilters() {
+  var entries = getFilteredEntries();
+  var list = $('entries-list');
+  var total = allEntries.length;
+  $('list-count').textContent = !total ? '' :
+    entries.length === total ? total + (total > 1 ? ' articles' : ' article') : entries.length + ' sur ' + total;
+  if (!entries.length) {
+    list.textContent = '';
+    list.appendChild(el('p', 'muted', total ? 'Aucun article ne correspond à ce filtre.' : "Aucun article pour le moment — sois le premier à écrire quelque chose."));
+    return;
+  }
+  list.replaceChildren.apply(list, entries.map(function (entry) {
+    if (!cards.has(entry.id)) cards.set(entry.id, renderEntryCard(entry));
+    return cards.get(entry.id);
+  }));
+}
+
+function refreshCard(entry) {
+  var old = cards.get(entry.id);
+  var fresh = renderEntryCard(entry);
+  cards.set(entry.id, fresh);
+  if (old && old.parentNode) old.parentNode.replaceChild(fresh, old);
+}
+
+/* ============ Carte d'article ============ */
+function renderEntryCard(entry) {
+  var mine = entry.author_id === currentUser.id;
+  var isGm = currentTable.created_by === entry.author_id;
+  var newCommentsCount = (entry.journal_comments || []).filter(function (c) {
+    return c.author_id !== currentUser.id && isSinceLastVisit(c.created_at);
+  }).length;
+
+  var card = el('article', 'page entry');
+  var view = el('div', 'entry-view');
+
+  var head = el('header', 'entry-head');
+  var over = el('div', 'entry-over');
+  if (entry.session_number != null) over.appendChild(el('span', null, 'Séance ' + entry.session_number));
+  if (isGm) over.appendChild(el('span', 'mark-gm', 'MJ'));
+  if (!mine && isSinceLastVisit(entry.created_at)) over.appendChild(el('span', 'mark-new', 'Nouveau'));
+  if (newCommentsCount > 0) over.appendChild(el('span', 'mark-new', newCommentsCount + (newCommentsCount > 1 ? ' nouveaux commentaires' : ' nouveau commentaire')));
+  if (over.childNodes.length) head.appendChild(over);
+
+  var titleText = entry.title || '';
+  var titleEl = el('h2', 'entry-title', titleText || '(Sans titre)');
+  titleEl.classList.add(!titleText ? 'untitled' : titleText.length <= 24 ? 'entry-title-xl' : titleText.length <= 48 ? 'entry-title-l' : 'entry-title-m');
+  head.appendChild(titleEl);
+
+  var signature = entry.signed_as ? entry.signed_as + ' (' + nameOf(entry.author_id) + ')' : nameOf(entry.author_id);
+  var edited = entry.updated_at && entry.updated_at !== entry.created_at;
+  head.appendChild(el('p', 'entry-byline', signature + ' — ' + fmtDate(entry.created_at) + (edited ? ' (modifié)' : '')));
+  head.insertAdjacentHTML('beforeend', ORNAMENT);
+  view.appendChild(head);
+
+  var bodyEl = el('div', 'entry-body');
+  bodyEl.innerHTML = renderRichText(entry.body);
+  var raw = entry.body || '';
+  // Lettrine : seulement sur un premier paragraphe assez long pour la porter.
+  if (raw.length >= 260 && /^[A-Za-zÀ-ÖØ-öø-ÿŒœ]/.test(raw) && raw.slice(0, 200).indexOf('\n') === -1) bodyEl.classList.add('dropcap');
+  view.appendChild(bodyEl);
+
+  if (entry._notice) { view.appendChild(el('p', 'entry-notice', entry._notice)); delete entry._notice; }
+
+  var images = entry.images || [];
+  if (images.length) {
+    var imagesWrap = el('div', 'entry-images' + (images.length === 1 ? ' single' : ''));
+    images.forEach(function (im, i) {
+      var thumb = button('thumb');
+      thumb.setAttribute('aria-label', "Agrandir l'image " + (i + 1));
+      var img = el('img');
+      img.loading = 'lazy'; img.decoding = 'async';
+      img.src = im.url; img.alt = '';
+      thumb.appendChild(img);
+      thumb.addEventListener('click', function () { openLightbox(im.url); });
+      imagesWrap.appendChild(thumb);
+    });
+    view.appendChild(imagesWrap);
+  }
+
+  if (mine) {
+    var actions = el('div', 'entry-actions');
+    var editBtn = button('btn btn-sm', 'Modifier');
+    editBtn.addEventListener('click', function () { openEditForm(card, entry); });
+    var delBtn = button('btn btn-sm btn-ghost', '🗑 Supprimer');
+    delBtn.addEventListener('click', function () {
+      askConfirm(actions, actions, 'Supprimer définitivement cet article et ses commentaires ?', 'Supprimer', async function () {
+        var res = await supabase.from('journal_entries').delete().eq('id', entry.id).select('id');
+        if (res.error) return 'Erreur : ' + res.error.message;
+        if (!res.data || !res.data.length) return 'Erreur : la base a refusé la suppression.';
+        images.filter(function (im) { return im.source === 'upload'; }).forEach(function (im) { removeStoredImage(im.url); });
+        allEntries = allEntries.filter(function (e) { return e !== entry; });
+        cards.delete(entry.id);
+        refreshList();
+      });
+    });
+    actions.append(editBtn, delBtn);
+    view.appendChild(actions);
+  }
+
+  card.append(view, renderComments(entry));
+  return card;
+}
+
+// Le formulaire prend la place de l'article le temps de la modification (un seul à la fois par article).
+function openEditForm(card, entry) {
+  if (card.classList.contains('editing')) return;
+  var wrap = el('div', 'entry-edit');
+  wrap.appendChild(el('h2', 'page-over', "Modifier l'article"));
+  function close() { wrap.remove(); card.classList.remove('editing'); }
+  var form = buildEntryForm({
+    entry: entry,
+    submitLabel: 'Enregistrer',
+    onCancel: close,
+    onSaved: function (saved, failures) {
+      Object.assign(entry, saved); // la ligne renvoyée par la base ; les commentaires déjà chargés sont conservés
+      if (failures.length) entry._notice = noticeText(failures);
+      refreshCard(entry);
+      refreshList();
+    }
+  });
+  wrap.appendChild(form.el);
+  card.classList.add('editing');
+  card.insertBefore(wrap, card.querySelector('.comments'));
+  form.title.focus();
+}
+
+/* ============ Commentaires ============ */
+function renderComments(entry, draftText) {
+  var list = entry.journal_comments || [];
+  var wrap = el('section', 'comments');
+  wrap.appendChild(el('h3', 'comments-head', list.length ? 'Commentaires · ' + list.length : 'Commentaires'));
+
+  list.forEach(function (c) {
+    var isNew = c.author_id !== currentUser.id && isSinceLastVisit(c.created_at);
+    var cEl = el('div', 'comment' + (isNew ? ' comment-new' : ''));
+    var meta = el('div', 'comment-meta');
+    meta.append(el('span', 'comment-author', nameOf(c.author_id)), el('span', 'comment-date', fmtDate(c.created_at)));
+    var cBody = el('div', 'comment-body');
+    cBody.innerHTML = renderRichText(c.body);
+    cEl.append(meta, cBody);
+
+    if (c.author_id === currentUser.id) {
+      var delBtn = button('btn btn-sm btn-ghost comment-delete', '🗑');
+      delBtn.title = 'Supprimer ce commentaire';
+      delBtn.setAttribute('aria-label', 'Supprimer ce commentaire');
+      delBtn.addEventListener('click', function () {
+        askConfirm(delBtn, cBody, 'Supprimer ce commentaire ?', 'Supprimer', async function () {
+          var res = await supabase.from('journal_comments').delete().eq('id', c.id).select('id');
+          if (res.error) return 'Erreur : ' + res.error.message;
+          if (!res.data || !res.data.length) return 'Erreur : la base a refusé la suppression.';
+          entry.journal_comments = list.filter(function (x) { return x !== c; });
+          refreshComments(entry);
+        });
+      });
+      meta.appendChild(delBtn);
+    }
+    wrap.appendChild(cEl);
+  });
+
+  var form = el('div', 'comment-form');
+  var ta = el('textarea');
+  ta.placeholder = 'Ajouter un commentaire…';
+  ta.setAttribute('aria-label', 'Ajouter un commentaire');
+  ta.value = draftText || '';
+  var send = button('btn btn-sm', 'Envoyer');
+  send.title = 'Envoyer (Ctrl + Entrée)';
+  var err = el('div', 'error-text comment-error');
+  err.setAttribute('role', 'alert');
+  async function submit() {
+    var text = ta.value.trim();
+    if (!text || send.disabled) return;
+    send.disabled = true;
+    err.textContent = '';
+    try {
+      var res = await supabase.from('journal_comments').insert({ entry_id: entry.id, author_id: currentUser.id, body: text }).select().single();
+      if (res.error) throw new Error(res.error.message);
+      entry.journal_comments = (entry.journal_comments || []).concat([res.data]);
+      refreshComments(entry, true);
+    } catch (e) {
+      err.textContent = 'Erreur : ' + e.message;
+      send.disabled = false;
+    }
+  }
+  send.addEventListener('click', submit);
+  ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submit(); } });
+  form.append(ta, send);
+  wrap.append(form, err);
+  return wrap;
+}
+
+// Ne reconstruit que les commentaires de l'article concerné (pas toute la page).
+function refreshComments(entry, clearDraftText) {
+  var card = cards.get(entry.id);
+  if (!card) return;
+  var old = card.querySelector('.comments');
+  var typed = clearDraftText ? '' : old.querySelector('.comment-form textarea').value;
+  card.replaceChild(renderComments(entry, typed), old);
+}
 
 init();
 </script>
